@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Visualizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: #f8f9ff;
+        }
+
+        .upload-area.dragover {
+            border-color: #764ba2;
+            background: #f0f0ff;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .upload-text {
+            color: #667eea;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+
+        .upload-hint {
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        #canvas {
+            width: 100%;
+            height: 300px;
+            background: #1a1a2e;
+            border-radius: 10px;
+            display: none;
+            margin-bottom: 20px;
+        }
+
+        .controls {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .file-info {
+            display: none;
+            background: #f8f9ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .file-info p {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 Audio Visualizer</h1>
+        
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-text">📁 Click or drag audio file here</div>
+            <div class="upload-hint">Supports MP3, WAV, OGG</div>
+            <input type="file" id="fileInput" accept="audio/*">
+        </div>
+
+        <div class="file-info" id="fileInfo">
+            <p><strong>File:</strong> <span id="fileName"></span></p>
+            <p><strong>Duration:</strong> <span id="fileDuration"></span></p>
+        </div>
+
+        <canvas id="canvas"></canvas>
+
+        <div class="controls" id="controls">
+            <button id="playBtn">▶️ Play</button>
+            <button id="pauseBtn" disabled>⏸️ Pause</button>
+            <button id="stopBtn" disabled>⏹️ Stop</button>
+        </div>
+    </div>
+
+    <script>
+        // Get elements
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const controls = document.getElementById('controls');
+        const fileInfo = document.getElementById('fileInfo');
+        const playBtn = document.getElementById('playBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const stopBtn = document.getElementById('stopBtn');
+
+        // Audio context and nodes
+        let audioContext;
+        let audioSource;
+        let analyser;
+        let audioBuffer;
+        let startTime = 0;
+        let pauseTime = 0;
+        let isPlaying = false;
+
+        // Set canvas size
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+
+        // Upload area click
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('audio/')) {
+                handleFile(file);
+            }
+        });
+
+        // File input change
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        });
+
+        // Handle file upload
+        function handleFile(file) {
+            document.getElementById('fileName').textContent = file.name;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                initAudio(e.target.result);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // Initialize audio
+        async function initAudio(arrayBuffer) {
+            // Create audio context if it doesn't exist
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            // Stop any playing audio
+            if (audioSource) {
+                audioSource.stop();
+            }
+
+            // Decode audio data
+            try {
+                audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                
+                // Display duration
+                const duration = audioBuffer.duration;
+                const minutes = Math.floor(duration / 60);
+                const seconds = Math.floor(duration % 60);
+                document.getElementById('fileDuration').textContent = 
+                    `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+                // Show UI elements
+                canvas.style.display = 'block';
+                controls.style.display = 'block';
+                fileInfo.style.display = 'block';
+
+                // Enable play button
+                playBtn.disabled = false;
+                stopBtn.disabled = false;
+
+                // Start visualization
+                if (!analyser) {
+                    analyser = audioContext.createAnalyser();
+                    analyser.fftSize = 2048;
+                }
+                
+                visualize();
+            } catch (error) {
+                alert('Error loading audio file: ' + error.message);
+            }
+        }
+
+        // Play audio
+        playBtn.addEventListener('click', () => {
+            if (!audioBuffer) return;
+
+            // Create new source
+            audioSource = audioContext.createBufferSource();
+            audioSource.buffer = audioBuffer;
+            audioSource.connect(analyser);
+            analyser.connect(audioContext.destination);
+
+            // Start from pause position or beginning
+            const offset = pauseTime;
+            audioSource.start(0, offset);
+            startTime = audioContext.currentTime - offset;
+            isPlaying = true;
+
+            playBtn.disabled = true;
+            pauseBtn.disabled = false;
+
+            // Handle end of audio
+            audioSource.onended = () => {
+                if (isPlaying) {
+                    stop();
+                }
+            };
+        });
+
+        // Pause audio
+        pauseBtn.addEventListener('click', () => {
+            if (audioSource && isPlaying) {
+                pauseTime = audioContext.currentTime - startTime;
+                audioSource.stop();
+                isPlaying = false;
+                playBtn.disabled = false;
+                pauseBtn.disabled = true;
+            }
+        });
+
+        // Stop audio
+        stopBtn.addEventListener('click', stop);
+
+        function stop() {
+            if (audioSource) {
+                audioSource.stop();
+            }
+            isPlaying = false;
+            pauseTime = 0;
+            startTime = 0;
+            playBtn.disabled = false;
+            pauseBtn.disabled = true;
+        }
+
+        // Visualization
+        function visualize() {
+            requestAnimationFrame(visualize);
+
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            analyser.getByteFrequencyData(dataArray);
+
+            // Clear canvas
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw bars
+            const barWidth = (canvas.width / bufferLength) * 2.5;
+            let x = 0;
+
+            for (let i = 0; i < bufferLength; i++) {
+                const barHeight = (dataArray[i] / 255) * canvas.height;
+
+                // Create gradient
+                const gradient = ctx.createLinearGradient(0, canvas.height - barHeight, 0, canvas.height);
+                gradient.addColorStop(0, '#667eea');
+                gradient.addColorStop(1, '#764ba2');
+
+                ctx.fillStyle = gradient;
+                ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+
+                x += barWidth + 1;
+            }
+        }
+    </script>
+</body>
+</html>
