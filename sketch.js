@@ -78,9 +78,13 @@ function handleFile() {
                 
                 select('#filename').html('File: ' + file.name);
                 
-                sound.disconnect();
+                // DON'T disconnect - keep default audio output!
+                // Just connect to analyzers as well
                 sound.connect(fft);
                 sound.connect(amplitude);
+                
+                // Optional: Set volume (0.0 to 1.0)
+                sound.setVolume(0.7);
                 
                 try {
                     audioBuffer = sound.buffer.getChannelData(0);
