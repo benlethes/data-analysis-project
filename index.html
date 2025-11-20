@@ -3,227 +3,242 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Audio Visualizer</title>
+    <title>Data Analysis Project: Sound Visualization</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400&family=Space+Grotesk:wght@400;600&display=swap" rel="stylesheet">
+    
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --bg: #ffffff;
+            --fg: #111111;
+            --accent: #0000ff;
+            --border: #dddddd;
         }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            min-height: 100vh;
-            padding: 20px;
-            color: white;
+            background-color: var(--bg);
+            color: var(--fg);
+            font-family: 'Inter', sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
+        /* CANVAS AREA */
+        #canvas-container {
+            flex-grow: 1;
+            width: 100%;
+            background: #f8f8f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* HEADER */
+        header {
+            position: absolute;
+            top: 20px;
+            left: 30px;
+            z-index: 100;
+            pointer-events: none;
         }
 
         h1 {
-            text-align: center;
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+            background: var(--bg);
+            padding: 5px 10px;
+            border: 1px solid var(--fg);
+            display: inline-block;
         }
 
-        .subtitle {
-            text-align: center;
-            opacity: 0.8;
-            margin-bottom: 30px;
-            font-size: 1.1em;
-        }
-
-        #controls {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            padding: 20px;
-            border-radius: 15px;
-            margin-bottom: 20px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
+        /* BOTTOM COMMAND BAR */
+        #controls-bar {
+            height: 120px; /* Slightly taller for better clicking */
+            border-top: 1px solid var(--fg);
+            background: var(--bg);
+            display: grid;
+            grid-template-columns: 200px 1fr 200px 200px 200px;
             align-items: center;
+        }
+
+        .control-group {
+            padding: 0 20px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
             justify-content: center;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            border-right: 1px solid var(--border);
+            gap: 8px;
         }
 
-        .file-input-wrapper {
-            position: relative;
-            overflow: hidden;
-            display: inline-block;
+        .label {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #666;
+            letter-spacing: 0.05em;
         }
 
-        .file-input-wrapper input[type=file] {
-            position: absolute;
-            left: -9999px;
-        }
-
-        .file-input-label {
-            display: inline-block;
-            padding: 12px 25px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: transform 0.2s, box-shadow 0.2s;
-            border: none;
-            font-size: 16px;
-        }
-
-        .file-input-label:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-
+        /* UI ELEMENTS */
         button {
-            padding: 12px 25px;
-            font-size: 16px;
-            font-weight: bold;
-            border: none;
-            border-radius: 8px;
+            background: transparent;
+            border: 1px solid var(--fg);
+            color: var(--fg);
+            font-family: 'Space Grotesk', sans-serif;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            padding: 8px 16px;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            color: white;
+            transition: all 0.2s;
         }
 
-        #playBtn {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        button:hover:not(:disabled) {
+            background: var(--fg);
+            color: var(--bg);
         }
-
-        #pauseBtn {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        }
-
-        #stopBtn {
-            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-        }
-
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-
-        button:active {
-            transform: translateY(0);
-        }
-
+        
         button:disabled {
-            opacity: 0.5;
+            border-color: #ccc;
+            color: #ccc;
             cursor: not-allowed;
-            transform: none;
         }
 
         select {
-            padding: 12px 20px;
-            font-size: 16px;
-            border: none;
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            font-weight: bold;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.8rem;
+            padding: 8px;
+            border: 1px solid var(--border);
+            background: transparent;
+            width: 100%;
             cursor: pointer;
             outline: none;
-            transition: background 0.2s;
         }
 
-        select:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-
-        select option {
-            background: #2a5298;
-            color: white;
-        }
-
-        #canvas-container {
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 440px;
-        }
-
-        #filename {
+        .file-upload {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
             width: 100%;
-            text-align: center;
-            margin-top: 15px;
-            font-size: 14px;
-            opacity: 0.8;
+        }
+        .file-upload input[type=file] {
+            position: absolute;
+            left: 0; top: 0; opacity: 0; 
+            width: 100%; height: 100%;
+            cursor: pointer;
         }
 
-        .info-box {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 20px;
-            text-align: center;
+        input[type="range"] {
+            width: 100%;
+            height: 2px;
+            background: var(--fg);
+            -webkit-appearance: none;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            background: var(--accent);
+            cursor: pointer;
+            border-radius: 0;
         }
 
-        /* Responsive design */
-        @media (max-width: 768px) {
-            h1 {
-                font-size: 2em;
-            }
-            
-            #controls {
-                flex-direction: column;
-            }
-            
-            button, select, .file-input-label {
-                width: 100%;
-            }
+        #playback-info {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.7rem;
+            color: var(--accent);
+            margin-top: 5px;
         }
+        
+        /* DEBUGGER FOR AUDIO */
+        #audio-debug {
+            position: fixed;
+            bottom: 130px;
+            right: 20px;
+            background: red;
+            color: white;
+            padding: 5px 10px;
+            font-family: monospace;
+            font-size: 10px;
+            display: none; /* Hidden by default, shown if error */
+        }
+
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🎵 Audio Visualizer</h1>
-        <p class="subtitle">Upload an audio file to visualize its sound waves</p>
-        
-        <div id="controls">
-            <div class="file-input-wrapper">
+
+    <header>
+        <h1>Data Analysis Project: Sound Visualization</h1>
+    </header>
+
+    <div id="canvas-container">
+        </div>
+    
+    <div id="audio-debug">AUDIO CONTEXT SUSPENDED</div>
+
+    <div id="controls-bar">
+        <div class="control-group">
+            <div class="label">01. Input Data</div>
+            <div class="file-upload">
+                <button style="width:100%">Select Audio File</button>
                 <input type="file" id="audioFile" accept="audio/*">
-                <label for="audioFile" class="file-input-label">📁 Choose Audio File</label>
             </div>
-            
-            <button id="playBtn" disabled>▶️ Play</button>
-            <button id="pauseBtn" disabled>⏸️ Pause</button>
-            <button id="stopBtn" disabled>⏹️ Stop</button>
-            
-            <select id="vizType">
-                <option value="waveform">🌊 Waveform</option>
-                <option value="spectrum">📊 Frequency Spectrum</option>
-                <option value="circular">⭕ Circular Spectrum</option>
-                <option value="spectrogram">🎨 Spectrogram</option>
+            <div id="fileName" style="font-size: 0.7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">No File Selected</div>
+        </div>
+
+        <div class="control-group">
+            <div class="label">02. Transport</div>
+            <div style="display: flex; gap: 10px;">
+                <button id="playBtn" disabled>Play</button>
+                <button id="pauseBtn" disabled>Pause</button>
+                <button id="stopBtn" disabled>Reset</button>
+            </div>
+            <div id="playback-info">System Ready</div>
+        </div>
+
+        <div class="control-group">
+            <div class="label">03. Visualization</div>
+            <select id="vizStyle">
+                <option value="waveform">A. Waveform (Standard)</option>
+                <option value="optical">B. Optical Flow (3D Lines)</option>
+                <option value="architect">C. Architect (Structure)</option>
+                <option value="paint">D. Color Blend (Paint)</option>
             </select>
         </div>
-        
-        <div id="canvas-container">
-            <!-- p5.js will create the canvas here -->
+
+        <div class="control-group">
+            <div class="label">04. Color Palette</div>
+            <select id="colorScheme">
+                <option value="bauhaus">Bauhaus (Primary)</option>
+                <option value="neon">Cyber (Neon/Dark)</option>
+                <option value="monochrome">Carbon (Greyscale)</option>
+                <option value="pastel">Ether (Pastel)</option>
+            </select>
         </div>
-        
-        <div id="filename"></div>
-        
-        <div class="info-box">
-            <p>💡 Tip: Try different visualization types to see your music in different ways!</p>
+
+        <div class="control-group" style="border-right: none;">
+            <div class="label">05. Reactivity</div>
+            <input type="range" id="intensitySlider" min="0" max="100" value="50">
+            <div style="display:flex; justify-content:space-between; font-size:0.6rem; margin-top:2px;">
+                <span>Subtle</span>
+                <span>Extreme</span>
+            </div>
         </div>
     </div>
-    
-    <!-- Load p5.js libraries -->
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/addons/p5.sound.min.js"></script>
-    
-    <!-- Your visualization code -->
     <script src="sketch.js"></script>
 </body>
 </html>

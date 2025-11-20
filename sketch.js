@@ -1,264 +1,314 @@
-// Global variables
+// Global Audio Variables
 let sound;
 let fft;
 let amplitude;
-let audioBuffer;
-let vizType = 'waveform';
-let spectrogramData = [];
+let audioContextStarted = false;
+
+// Visualization Variables
+let vizStyle = 'waveform';
+let intensity = 1.0;
+let colorPalette = 'bauhaus';
+
+// --- Palette Definitions ---
+const palettes = {
+    'bauhaus': [[109, 53, 138], [246, 217, 18], [252, 132, 5], [0, 0, 255], [200, 20, 20]],
+    'neon': [[255, 0, 255], [0, 255, 255], [255, 255, 0], [50, 0, 100], [0, 255, 0]],
+    'monochrome': [[0, 0, 0], [50, 50, 50], [100, 100, 100], [200, 200, 200], [20, 20, 20]],
+    'pastel': [[255, 183, 178], [181, 234, 215], [226, 240, 203], [255, 218, 193], [224, 187, 228]]
+};
 
 function setup() {
-    console.log('Setup started...');
+    let container = select('#canvas-container');
     
-    let canvas = createCanvas(800, 400);
+    // 16:9 Cinematic Calculation
+    let w = container.width;
+    let h = w * 9/16;
+    
+    // Constrain to available height
+    if (h > container.height) {
+        h = container.height;
+        w = h * 16/9;
+    }
+
+    let canvas = createCanvas(w, h);
     canvas.parent('canvas-container');
     
+    // Initialize Audio Analyzers
     fft = new p5.FFT(0.8, 1024);
     amplitude = new p5.Amplitude();
     
-    console.log('Analyzers created');
+    // Ensure master volume is up
+    outputVolume(1.0);
     
-    let fileInput = select('#audioFile');
-    fileInput.changed(handleFile);
+    setupControls();
     
-    select('#playBtn').mousePressed(playAudio);
-    select('#pauseBtn').mousePressed(pauseAudio);
-    select('#stopBtn').mousePressed(stopAudio);
-    select('#vizType').changed(changeVizType);
+    background(255);
     
-    background(20);
-    console.log('Setup complete!');
+    // Check Audio Context status periodically
+    setInterval(checkAudioState, 1000);
+}
+
+function checkAudioState() {
+    // If audio context exists but is suspended, show warning
+    if (getAudioContext().state !== 'running') {
+        select('#audio-debug').style('display', 'block');
+    } else {
+        select('#audio-debug').style('display', 'none');
+    }
 }
 
 function draw() {
-    background(20);
+    // Handle Analysis
+    let bass = 0, mid = 0, treble = 0, vol = 0;
     
-    if (sound && sound.isLoaded()) {
-        if (vizType === 'waveform') {
-            drawWaveform();
-        } else if (vizType === 'spectrum') {
-            drawSpectrum();
-        } else if (vizType === 'circular') {
-            drawCircularSpectrum();
-        } else if (vizType === 'spectrogram') {
-            drawSpectrogram();
-        }
-        showInfo();
-    } else {
-        fill(255);
-        textAlign(CENTER, CENTER);
-        textSize(20);
-        text('Upload an audio file to begin', width/2, height/2);
-    }
-}
-
-function handleFile() {
-    console.log('handleFile called');
-    let file = this.elt.files[0];
-    console.log('File selected:', file);
-    
-    if (file) {
-        console.log('File type:', file.type);
-        console.log('File size:', file.size, 'bytes');
+    if (sound && sound.isPlaying()) {
+        fft.analyze();
+        bass = fft.getEnergy("bass");
+        mid = fft.getEnergy("mid");
+        treble = fft.getEnergy("treble");
+        vol = amplitude.getLevel();
         
-        if (sound) {
-            console.log('Stopping previous sound');
-            sound.stop();
-        }
-        
-        select('#filename').html('Loading: ' + file.name);
-        
-        let fileURL = URL.createObjectURL(file);
-        console.log('File URL created:', fileURL);
-        
-        console.log('Starting to load sound...');
-        sound = loadSound(fileURL, 
-            function() {
-                console.log('Audio loaded successfully!');
-                console.log('Duration:', sound.duration(), 'seconds');
-                
-                select('#filename').html('File: ' + file.name);
-                
-                // DON'T disconnect - keep default audio output!
-                // Just connect to analyzers as well
-                sound.connect(fft);
-                sound.connect(amplitude);
-                
-                // Optional: Set volume (0.0 to 1.0)
-                sound.setVolume(0.7);
-                
-                try {
-                    audioBuffer = sound.buffer.getChannelData(0);
-                    console.log('Audio buffer loaded, length:', audioBuffer.length);
-                } catch (err) {
-                    console.error('Error getting audio buffer:', err);
-                }
-                
-                select('#playBtn').removeAttribute('disabled');
-                select('#pauseBtn').removeAttribute('disabled');
-                select('#stopBtn').removeAttribute('disabled');
-                
-                console.log('Buttons enabled');
-            },
-            function(err) {
-                console.error('Error loading audio:', err);
-                select('#filename').html('Error loading file');
-                alert('Error loading audio file. Please try MP3, WAV, or OGG format.');
-            }
-        );
-    } else {
-        console.log('No file selected');
+        // Update Intensity based on slider
+        let sliderVal = select('#intensitySlider').value();
+        intensity = map(sliderVal, 0, 100, 0.5, 4.0);
+    }
+
+    // --- VIZ 1: WAVEFORM (Standard) ---
+    if (vizStyle === 'waveform') {
+        background(255); 
+        drawWaveform(vol);
+    } 
+    // --- VIZ 2: OPTICAL FLOW ---
+    else if (vizStyle === 'optical') {
+        background(0); 
+        drawOptical(bass, mid);
+    }
+    // --- VIZ 3: ARCHITECT ---
+    else if (vizStyle === 'architect') {
+        // Accumulation: Do not clear background
+        drawArchitect(treble, vol);
+    }
+    // --- VIZ 4: PAINT BLEND ---
+    else if (vizStyle === 'paint') {
+        // Accumulation: Do not clear background
+        drawPaint(bass, treble, vol);
     }
 }
 
-function playAudio() {
-    console.log('Play button clicked');
-    if (sound && sound.isLoaded()) {
-        console.log('Playing sound...');
-        sound.play();
-    } else {
-        console.log('Sound not loaded yet');
-    }
-}
-
-function pauseAudio() {
-    console.log('Pause button clicked');
-    if (sound && sound.isLoaded()) {
-        sound.pause();
-    }
-}
-
-function stopAudio() {
-    console.log('Stop button clicked');
-    if (sound && sound.isLoaded()) {
-        sound.stop();
-        spectrogramData = [];
-    }
-}
-
-function changeVizType() {
-    let selector = select('#vizType');
-    vizType = selector.value();
-    console.log('Visualization changed to:', vizType);
-    spectrogramData = [];
-}
-
-function drawWaveform() {
-    if (!audioBuffer) return;
-    
-    stroke(100, 200, 255);
-    strokeWeight(2);
+// ==============================================
+// 1. WAVEFORM (Standard)
+// ==============================================
+function drawWaveform(vol) {
+    let wave = fft.waveform();
     noFill();
+    stroke(0);
+    strokeWeight(1.5 * intensity);
+    
     beginShape();
-    
-    let step = floor(audioBuffer.length / width);
-    
     for (let i = 0; i < width; i++) {
-        let index = floor(i * step);
-        let amp = audioBuffer[index];
-        let y = map(amp, -1, 1, height, 0);
-        vertex(i, y);
+        let index = floor(map(i, 0, width, 0, wave.length));
+        let x = i;
+        let y = map(wave[index], -1, 1, height, 0);
+        vertex(x, y);
     }
-    
     endShape();
     
-    stroke(100, 100, 100);
-    strokeWeight(1);
+    stroke(0, 0, 255, 100);
     line(0, height/2, width, height/2);
 }
 
-function drawSpectrum() {
-    let spectrum = fft.analyze();
-    noStroke();
+// ==============================================
+// 2. OPTICAL FLOW (Moiré/Warped)
+// ==============================================
+function drawOptical(bass, mid) {
+    stroke(255);
+    noFill();
+    strokeWeight(1.5);
     
-    let numBars = 256;
-    let barWidth = width / numBars;
+    let gap = 20; 
+    let curveAmp = map(bass, 0, 255, 0, 150) * intensity; 
     
-    for (let i = 0; i < numBars; i++) {
-        let amp = spectrum[i];
-        let barHeight = map(amp, 0, 255, 0, height);
-        
-        colorMode(HSB);
-        let hue = map(i, 0, numBars, 0, 360);
-        fill(hue, 80, 100);
-        rect(i * barWidth, height - barHeight, barWidth, barHeight);
+    // Add Z-axis time movement
+    let time = frameCount * 0.05;
+    
+    for (let y = 0; y < height; y += gap) {
+        beginShape();
+        for (let x = 0; x < width; x += 20) {
+            let distFromCenter = dist(x, y, width/2, height/2);
+            
+            // Sine waves creating the "fabric" look
+            let wave1 = sin(x * 0.02 + time);
+            let wave2 = cos(y * 0.03 + time);
+            
+            // Bass distorts the wave height
+            let distortion = wave1 * wave2 * curveAmp;
+            
+            // Mid frequency adds "glitch" noise
+            if (mid > 100) {
+                distortion += noise(x, y) * map(mid, 0, 255, 0, 50);
+            }
+            
+            vertex(x, y + distortion);
+        }
+        endShape();
     }
-    
-    colorMode(RGB);
 }
 
-function drawCircularSpectrum() {
-    let spectrum = fft.analyze();
+// ==============================================
+// 3. ARCHITECT (Shattered Plans)
+// ==============================================
+function drawArchitect(treble, vol) {
+    if (vol < 0.05) return;
     
-    push();
-    translate(width/2, height/2);
+    stroke(0, 200);
+    strokeWeight(1);
     noFill();
     
-    let numBars = 180;
-    let radius = 100;
-    
-    for (let i = 0; i < numBars; i++) {
-        let angle = map(i, 0, numBars, 0, TWO_PI);
-        let amp = spectrum[i];
-        let barHeight = map(amp, 0, 255, 0, 150);
-        
-        let x1 = cos(angle) * radius;
-        let y1 = sin(angle) * radius;
-        let x2 = cos(angle) * (radius + barHeight);
-        let y2 = sin(angle) * (radius + barHeight);
-        
-        stroke(255, map(amp, 0, 255, 50, 255), 200);
-        strokeWeight(2);
-        line(x1, y1, x2, y2);
+    // Strobe white on heavy hits
+    if (vol > 0.7 && random() > 0.9) {
+        fill(255, 100);
+        rect(0, 0, width, height);
+        noFill();
     }
     
-    pop();
+    // Recursive looking lines
+    let x = random(width);
+    let y = random(height);
+    let size = random(50, 400) * intensity;
+    
+    // Draw "Floor Plan" shards
+    beginShape();
+    for (let i = 0; i < 5; i++) {
+        let xOff = random(-size, size);
+        let yOff = random(-size, size);
+        
+        // Snap to 90 degrees for architect look
+        if (random() > 0.5) xOff = 0;
+        else yOff = 0;
+        
+        vertex(x + xOff, y + yOff);
+    }
+    endShape();
+    
+    // Connecting construction lines
+    if (random() > 0.5) {
+        stroke(0, 0, 255, 50); // Blue construction lines
+        line(x, 0, x, height);
+    }
 }
 
-function drawSpectrogram() {
-    let spectrum = fft.analyze();
-    spectrogramData.push(spectrum);
-    
-    if (spectrogramData.length > width) {
-        spectrogramData.shift();
-    }
-    
+// ==============================================
+// 4. PAINT BLEND (Color Schemes)
+// ==============================================
+function drawPaint(bass, treble, vol) {
     noStroke();
-    let sliceWidth = width / spectrogramData.length;
-    let numBands = 256;
-    let bandHeight = height / numBands;
+    if (vol < 0.01) return;
     
-    for (let x = 0; x < spectrogramData.length; x++) {
-        let spec = spectrogramData[x];
+    let currentPalette = palettes[colorPalette];
+    let count = floor(map(vol, 0, 1, 1, 5) * intensity);
+    
+    for(let i = 0; i < count; i++) {
+        let col = random(currentPalette);
+        let r = col[0];
+        let g = col[1];
+        let b = col[2];
         
-        for (let y = 0; y < numBands; y++) {
-            let amp = spec[y];
+        let alpha = map(vol, 0, 1, 5, 80);
+        fill(r, g, b, alpha);
+        
+        // Blend mode driven by Treble
+        if (treble > 150) blendMode(HARD_LIGHT);
+        else blendMode(BLEND);
+        
+        let w = random(20, 200) * intensity;
+        let h = random(20, 400) * intensity;
+        let x = random(width);
+        let y = random(height);
+        
+        rect(x, y, w, h);
+    }
+    blendMode(BLEND);
+}
+
+// ==============================================
+// UI & AUDIO HANDLING (THE FIX)
+// ==============================================
+function setupControls() {
+    // 1. File Upload
+    select('#audioFile').changed(function() {
+        let file = this.elt.files[0];
+        if (file) {
+            select('#fileName').html(file.name);
+            if (sound) sound.stop();
             
-            colorMode(HSB);
-            let brightness = map(amp, 0, 255, 0, 100);
-            let hue = map(amp, 0, 255, 240, 0);
-            fill(hue, 80, brightness);
-            
-            rect(x * sliceWidth, height - (y * bandHeight), sliceWidth, bandHeight);
+            sound = loadSound(URL.createObjectURL(file), () => {
+                select('#playBtn').removeAttribute('disabled');
+                select('#pauseBtn').removeAttribute('disabled');
+                select('#stopBtn').removeAttribute('disabled');
+                select('#playback-info').html('File Loaded. Press Play.');
+            });
         }
-    }
+    });
+
+    // 2. Transport - ROBUST AUDIO START
+    select('#playBtn').mousePressed(() => {
+        // A: Resume Audio Context (Critical for Safari)
+        if (getAudioContext().state !== 'running') {
+            getAudioContext().resume();
+        }
+        
+        // B: Play Sound if loaded
+        if (sound && sound.isLoaded()) {
+            // Force Volume to Max
+            outputVolume(1.0); 
+            sound.setVolume(1.0);
+            
+            sound.play();
+            select('#playback-info').html('Playing...');
+            
+            // Visual confirmation in console
+            console.log("Playing. Audio Context State:", getAudioContext().state);
+        }
+    });
     
-    colorMode(RGB);
+    select('#pauseBtn').mousePressed(() => {
+        if (sound) {
+            sound.pause();
+            select('#playback-info').html('Paused');
+        }
+    });
+    
+    select('#stopBtn').mousePressed(() => {
+        if (sound) sound.stop();
+        resetCanvas();
+    });
+
+    // 3. Viz Selection
+    select('#vizStyle').changed(() => {
+        vizStyle = select('#vizStyle').value();
+        resetCanvas();
+    });
+
+    // 4. Color Selection
+    select('#colorScheme').changed(() => {
+        colorPalette = select('#colorScheme').value();
+    });
 }
 
-function showInfo() {
-    fill(255);
-    noStroke();
-    textAlign(LEFT, TOP);
-    textSize(14);
-    
-    if (sound.isPlaying()) {
-        let pos = sound.currentTime();
-        let dur = sound.duration();
-        text('Playing: ' + pos.toFixed(1) + 's / ' + dur.toFixed(1) + 's', 10, 10);
-    } else {
-        text('Paused', 10, 10);
+function resetCanvas() {
+    if (vizStyle === 'optical') background(0);
+    else background(255);
+    select('#playback-info').html(vizStyle.toUpperCase() + ' READY');
+}
+
+function windowResized() {
+    let container = select('#canvas-container');
+    let w = container.width;
+    let h = w * 9/16;
+    if (h > container.height) {
+        h = container.height;
+        w = h * 16/9;
     }
-    
-    let level = amplitude.getLevel();
-    text('Level: ' + (level * 100).toFixed(1) + '%', 10, 30);
+    resizeCanvas(w, h);
+    resetCanvas();
 }
