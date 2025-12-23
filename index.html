@@ -40,6 +40,17 @@
             position: relative;
             overflow: hidden;
         }
+        
+        /* Fullscreen override class */
+        #canvas-container.fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 999;
+            background: #000;
+        }
 
         /* HEADER */
         header {
@@ -60,25 +71,78 @@
             border: 1px solid var(--fg);
             display: inline-block;
         }
+        
+        /* CONTROLS (Top Right) */
+        .top-controls {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            z-index: 100;
+            display: flex;
+            gap: 10px;
+        }
+        
+        /* Button with Icon Styling */
+        .btn-icon {
+            display: flex;
+            align-items: center;
+            gap: 8px; /* Space between icon and text */
+            padding-right: 12px; /* Slight adjustment for visual balance */
+        }
+        
+        .btn-icon svg {
+            width: 14px;
+            height: 14px;
+            fill: currentColor;
+        }
+
+        /* Floating Exit Button (Hidden by default) */
+        #exit-fs-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: var(--bg); 
+            color: var(--fg);
+            border: 1px solid var(--fg);
+            padding: 10px 20px;
+            font-family: 'Space Grotesk', sans-serif;
+            text-transform: uppercase;
+            cursor: pointer;
+            display: none; 
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s; 
+        }
+        
+        #exit-fs-btn:hover {
+            background: var(--fg);
+            color: var(--bg);
+        }
+        
+        body.is-fullscreen #exit-fs-btn {
+            display: flex;
+        }
 
         /* BOTTOM COMMAND BAR */
         #controls-bar {
-            height: 120px; /* Slightly taller for better clicking */
+            height: 140px; 
             border-top: 1px solid var(--fg);
             background: var(--bg);
             display: grid;
-            grid-template-columns: 200px 1fr 200px 200px 200px;
-            align-items: center;
+            grid-template-columns: 280px 1fr 200px 200px 200px;
+            align-items: start; 
+            transition: all 0.3s ease;
         }
 
         .control-group {
-            padding: 0 20px;
+            padding: 20px; 
             height: 100%;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: flex-start;
             border-right: 1px solid var(--border);
-            gap: 8px;
+            gap: 12px;
         }
 
         .label {
@@ -88,6 +152,7 @@
             text-transform: uppercase;
             color: #666;
             letter-spacing: 0.05em;
+            line-height: 1; 
         }
 
         /* UI ELEMENTS */
@@ -113,6 +178,12 @@
             color: #ccc;
             cursor: not-allowed;
         }
+        
+        button.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
 
         select {
             font-family: 'Inter', sans-serif;
@@ -123,6 +194,13 @@
             width: 100%;
             cursor: pointer;
             outline: none;
+        }
+
+        .upload-container {
+            display: none; 
+        }
+        .upload-container.visible {
+            display: block;
         }
 
         .file-upload {
@@ -144,6 +222,7 @@
             background: var(--fg);
             -webkit-appearance: none;
             outline: none;
+            margin-top: 10px;
         }
         input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
@@ -161,17 +240,47 @@
             margin-top: 5px;
         }
         
-        /* DEBUGGER FOR AUDIO */
         #audio-debug {
             position: fixed;
-            bottom: 130px;
+            bottom: 160px;
             right: 20px;
             background: red;
             color: white;
             padding: 5px 10px;
             font-family: monospace;
             font-size: 10px;
-            display: none; /* Hidden by default, shown if error */
+            display: none;
+            z-index: 200;
+        }
+
+        /* --- MOBILE RESPONSIVENESS --- */
+        @media (max-width: 900px) {
+            body {
+                height: 100%; 
+                overflow-y: auto;
+            }
+            
+            #canvas-container {
+                height: 60vh;
+                flex-grow: 0;
+            }
+
+            #controls-bar {
+                height: auto;
+                grid-template-columns: 1fr;
+                border-top: none;
+            }
+
+            .control-group {
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                padding: 20px;
+                height: auto;
+            }
+            
+            h1 { font-size: 1rem; }
+            
+            #fullscreen-trigger { display: none; } 
         }
 
     </style>
@@ -181,6 +290,22 @@
     <header>
         <h1>Data Analysis Project: Sound Visualization</h1>
     </header>
+    
+    <div class="top-controls">
+        <button id="fullscreen-trigger" class="btn-icon">
+            <svg viewBox="0 0 24 24">
+                <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+            </svg>
+            Fullscreen
+        </button>
+    </div>
+
+    <button id="exit-fs-btn">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+            <path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
+        </svg>
+        Exit Fullscreen
+    </button>
 
     <div id="canvas-container">
         </div>
@@ -189,12 +314,22 @@
 
     <div id="controls-bar">
         <div class="control-group">
-            <div class="label">01. Input Data</div>
-            <div class="file-upload">
-                <button style="width:100%">Select Audio File</button>
-                <input type="file" id="audioFile" accept="audio/*">
+            <div class="label">01. Input Source</div>
+            <select id="audioSource">
+                <option value="upload" selected>Upload File</option>
+                <option value="demo1">Demo: Classical</option>
+                <option value="demo2">Demo: Electronic</option>
+                <option value="mic">Microphone (Live)</option>
+            </select>
+            
+            <div id="uploadGroup" class="upload-container visible">
+                <div class="file-upload">
+                    <button style="width:100%">Select Audio File</button>
+                    <input type="file" id="audioFile" accept="audio/*">
+                </div>
             </div>
-            <div id="fileName" style="font-size: 0.7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">No File Selected</div>
+            
+            <div id="fileName" style="font-size: 0.7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Waiting for input...</div>
         </div>
 
         <div class="control-group">
@@ -202,7 +337,8 @@
             <div style="display: flex; gap: 10px;">
                 <button id="playBtn" disabled>Play</button>
                 <button id="pauseBtn" disabled>Pause</button>
-                <button id="stopBtn" disabled>Reset</button>
+                <button id="stopAudioBtn" disabled>Stop</button>
+                <button id="resetBtn">Clear</button>
             </div>
             <div id="playback-info">System Ready</div>
         </div>
@@ -223,7 +359,10 @@
                 <option value="bauhaus">Bauhaus (Primary)</option>
                 <option value="neon">Cyber (Neon/Dark)</option>
                 <option value="monochrome">Carbon (Greyscale)</option>
-                <option value="pastel">Ether (Pastel)</option>
+                <option value="sunset">Sunset (Warm)</option>
+                <option value="ocean">Ocean (Cool)</option>
+                <option value="earth">Earth (Natural)</option>
+                <option value="midnight">Midnight (Deep)</option>
             </select>
         </div>
 

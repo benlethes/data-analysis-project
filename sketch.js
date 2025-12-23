@@ -1,8 +1,9 @@
 // Global Audio Variables
 let sound;
+let mic;
 let fft;
 let amplitude;
-let audioContextStarted = false;
+let inputMode = 'upload'; // 'upload', 'mic', 'demo'
 
 // Visualization Variables
 let vizStyle = 'waveform';
@@ -14,42 +15,43 @@ const palettes = {
     'bauhaus': [[109, 53, 138], [246, 217, 18], [252, 132, 5], [0, 0, 255], [200, 20, 20]],
     'neon': [[255, 0, 255], [0, 255, 255], [255, 255, 0], [50, 0, 100], [0, 255, 0]],
     'monochrome': [[0, 0, 0], [50, 50, 50], [100, 100, 100], [200, 200, 200], [20, 20, 20]],
-    'pastel': [[255, 183, 178], [181, 234, 215], [226, 240, 203], [255, 218, 193], [224, 187, 228]]
+    'pastel': [[255, 183, 178], [181, 234, 215], [226, 240, 203], [255, 218, 193], [224, 187, 228]],
+    'sunset': [[255, 94, 77], [255, 166, 0], [251, 197, 49], [255, 69, 105], [138, 43, 226]],
+    'ocean': [[0, 119, 182], [0, 180, 216], [72, 202, 228], [0, 150, 199], [144, 224, 239]],
+    'earth': [[101, 84, 50], [176, 137, 104], [205, 179, 139], [139, 119, 85], [160, 82, 45]],
+    'midnight': [[25, 25, 112], [72, 61, 139], [106, 90, 205], [123, 104, 238], [147, 112, 219]]
 };
 
 function setup() {
     let container = select('#canvas-container');
     
     // 16:9 Cinematic Calculation
-    let w = container.width;
+    // FIX: Use elt.clientWidth because p5 element .width property can be unreliable for divs
+    let w = container.elt.clientWidth; 
     let h = w * 9/16;
     
     // Constrain to available height
-    if (h > container.height) {
-        h = container.height;
+    if (h > container.elt.clientHeight) {
+        h = container.elt.clientHeight;
         w = h * 16/9;
     }
 
     let canvas = createCanvas(w, h);
     canvas.parent('canvas-container');
     
-    // Initialize Audio Analyzers
+    mic = new p5.AudioIn(); 
     fft = new p5.FFT(0.8, 1024);
     amplitude = new p5.Amplitude();
     
-    // Ensure master volume is up
     outputVolume(1.0);
     
     setupControls();
-    
     background(255);
     
-    // Check Audio Context status periodically
     setInterval(checkAudioState, 1000);
 }
 
 function checkAudioState() {
-    // If audio context exists but is suspended, show warning
     if (getAudioContext().state !== 'running') {
         select('#audio-debug').style('display', 'block');
     } else {
@@ -58,50 +60,59 @@ function checkAudioState() {
 }
 
 function draw() {
-    // Handle Analysis
     let bass = 0, mid = 0, treble = 0, vol = 0;
-    
-    if (sound && sound.isPlaying()) {
+    let isAnalyzing = false;
+
+    if (inputMode !== 'mic') {
+        if (sound && sound.isPlaying()) isAnalyzing = true;
+    } else {
+        if (mic.enabled) isAnalyzing = true;
+    }
+
+    if (isAnalyzing) {
         fft.analyze();
         bass = fft.getEnergy("bass");
         mid = fft.getEnergy("mid");
         treble = fft.getEnergy("treble");
         vol = amplitude.getLevel();
         
-        // Update Intensity based on slider
         let sliderVal = select('#intensitySlider').value();
         intensity = map(sliderVal, 0, 100, 0.5, 4.0);
     }
 
-    // --- VIZ 1: WAVEFORM (Standard) ---
+    // VIZ ROUTING
     if (vizStyle === 'waveform') {
         background(255); 
         drawWaveform(vol);
     } 
-    // --- VIZ 2: OPTICAL FLOW ---
     else if (vizStyle === 'optical') {
         background(0); 
         drawOptical(bass, mid);
     }
-    // --- VIZ 3: ARCHITECT ---
     else if (vizStyle === 'architect') {
-        // Accumulation: Do not clear background
         drawArchitect(treble, vol);
     }
-    // --- VIZ 4: PAINT BLEND ---
     else if (vizStyle === 'paint') {
-        // Accumulation: Do not clear background
         drawPaint(bass, treble, vol);
     }
 }
 
+// --- Helper for Palettes ---
+function getPaletteColor(index) {
+    let p = palettes[colorPalette];
+    let c = p[index % p.length];
+    return color(c[0], c[1], c[2]); 
+}
+
 // ==============================================
-// 1. WAVEFORM (Standard)
+// VISUALIZATION FUNCTIONS
 // ==============================================
+
 function drawWaveform(vol) {
     let wave = fft.waveform();
     noFill();
-    stroke(0);
+    let c = getPaletteColor(3); 
+    stroke(c);
     strokeWeight(1.5 * intensity);
     
     beginShape();
@@ -113,93 +124,75 @@ function drawWaveform(vol) {
     }
     endShape();
     
-    stroke(0, 0, 255, 100);
+    stroke(getPaletteColor(0));
+    strokeWeight(0.5);
     line(0, height/2, width, height/2);
 }
 
-// ==============================================
-// 2. OPTICAL FLOW (Moiré/Warped)
-// ==============================================
 function drawOptical(bass, mid) {
-    stroke(255);
+    let c = getPaletteColor(1);
+    stroke(c);
     noFill();
     strokeWeight(1.5);
     
     let gap = 20; 
     let curveAmp = map(bass, 0, 255, 0, 150) * intensity; 
-    
-    // Add Z-axis time movement
     let time = frameCount * 0.05;
     
     for (let y = 0; y < height; y += gap) {
         beginShape();
         for (let x = 0; x < width; x += 20) {
-            let distFromCenter = dist(x, y, width/2, height/2);
-            
-            // Sine waves creating the "fabric" look
             let wave1 = sin(x * 0.02 + time);
             let wave2 = cos(y * 0.03 + time);
-            
-            // Bass distorts the wave height
             let distortion = wave1 * wave2 * curveAmp;
             
-            // Mid frequency adds "glitch" noise
             if (mid > 100) {
                 distortion += noise(x, y) * map(mid, 0, 255, 0, 50);
             }
-            
             vertex(x, y + distortion);
         }
         endShape();
     }
 }
 
-// ==============================================
-// 3. ARCHITECT (Shattered Plans)
-// ==============================================
 function drawArchitect(treble, vol) {
     if (vol < 0.05) return;
     
-    stroke(0, 200);
+    let lineCol = getPaletteColor(0);
+    lineCol.setAlpha(200);
+    stroke(lineCol);
     strokeWeight(1);
     noFill();
     
-    // Strobe white on heavy hits
     if (vol > 0.7 && random() > 0.9) {
-        fill(255, 100);
+        let flashCol = getPaletteColor(1);
+        flashCol.setAlpha(100);
+        fill(flashCol);
         rect(0, 0, width, height);
         noFill();
     }
     
-    // Recursive looking lines
     let x = random(width);
     let y = random(height);
     let size = random(50, 400) * intensity;
     
-    // Draw "Floor Plan" shards
     beginShape();
     for (let i = 0; i < 5; i++) {
         let xOff = random(-size, size);
         let yOff = random(-size, size);
-        
-        // Snap to 90 degrees for architect look
-        if (random() > 0.5) xOff = 0;
-        else yOff = 0;
-        
+        if (random() > 0.5) xOff = 0; else yOff = 0;
         vertex(x + xOff, y + yOff);
     }
     endShape();
     
-    // Connecting construction lines
     if (random() > 0.5) {
-        stroke(0, 0, 255, 50); // Blue construction lines
+        let accent = getPaletteColor(3);
+        accent.setAlpha(50);
+        stroke(accent);
         line(x, 0, x, height);
     }
 }
 
-// ==============================================
-// 4. PAINT BLEND (Color Schemes)
-// ==============================================
 function drawPaint(bass, treble, vol) {
     noStroke();
     if (vol < 0.01) return;
@@ -208,15 +201,10 @@ function drawPaint(bass, treble, vol) {
     let count = floor(map(vol, 0, 1, 1, 5) * intensity);
     
     for(let i = 0; i < count; i++) {
-        let col = random(currentPalette);
-        let r = col[0];
-        let g = col[1];
-        let b = col[2];
-        
+        let colArr = random(currentPalette);
         let alpha = map(vol, 0, 1, 5, 80);
-        fill(r, g, b, alpha);
+        fill(colArr[0], colArr[1], colArr[2], alpha);
         
-        // Blend mode driven by Treble
         if (treble > 150) blendMode(HARD_LIGHT);
         else blendMode(BLEND);
         
@@ -224,17 +212,71 @@ function drawPaint(bass, treble, vol) {
         let h = random(20, 400) * intensity;
         let x = random(width);
         let y = random(height);
-        
         rect(x, y, w, h);
     }
     blendMode(BLEND);
 }
 
 // ==============================================
-// UI & AUDIO HANDLING (THE FIX)
+// UI & CONTROLS
 // ==============================================
 function setupControls() {
-    // 1. File Upload
+
+    // --- Input Source Selector ---
+    select('#audioSource').changed(function() {
+        let val = this.value();
+        inputMode = val;
+        
+        // Stop everything on change
+        if (sound) sound.stop();
+        if (mic) mic.stop();
+        resetCanvas(); 
+        
+        let uploadGroup = select('#uploadGroup');
+        let fileName = select('#fileName');
+        let playBtn = select('#playBtn');
+        let pauseBtn = select('#pauseBtn');
+        let stopAudioBtn = select('#stopAudioBtn');
+
+        // Setup UI for specific mode
+        if (val === 'mic') {
+            uploadGroup.removeClass('visible');
+            fileName.html('Microphone Input Selected');
+            playBtn.removeAttribute('disabled');
+            playBtn.html('Start Mic');
+            pauseBtn.attribute('disabled', '');
+            stopAudioBtn.removeAttribute('disabled');
+            
+            fft.setInput(mic);
+            amplitude.setInput(mic);
+        }
+        else if (val === 'upload') {
+            uploadGroup.addClass('visible');
+            fileName.html('No File Selected');
+            playBtn.attribute('disabled', '');
+            stopAudioBtn.attribute('disabled', '');
+            playBtn.html('Play');
+            playBtn.removeAttribute('class');
+        }
+        else if (val.startsWith('demo')) {
+            uploadGroup.removeClass('visible');
+            let fileToLoad = (val === 'demo1') ? 'demo1_classical.mp3' : 'demo2_electronic.mp3';
+            fileName.html('Loading ' + fileToLoad + '...');
+            
+            sound = loadSound(fileToLoad, () => {
+                fileName.html('Ready: ' + fileToLoad);
+                playBtn.removeAttribute('disabled');
+                stopAudioBtn.removeAttribute('disabled');
+                playBtn.html('Play');
+                pauseBtn.removeAttribute('disabled');
+                
+                fft.setInput(sound);
+                amplitude.setInput(sound);
+            });
+        }
+    });
+
+    // --- File Upload ---
     select('#audioFile').changed(function() {
         let file = this.elt.files[0];
         if (file) {
@@ -244,71 +286,117 @@ function setupControls() {
             sound = loadSound(URL.createObjectURL(file), () => {
                 select('#playBtn').removeAttribute('disabled');
                 select('#pauseBtn').removeAttribute('disabled');
-                select('#stopBtn').removeAttribute('disabled');
+                select('#stopAudioBtn').removeAttribute('disabled');
                 select('#playback-info').html('File Loaded. Press Play.');
+                fft.setInput(sound);
+                amplitude.setInput(sound);
             });
         }
     });
 
-    // 2. Transport - ROBUST AUDIO START
+    // --- PLAY ---
     select('#playBtn').mousePressed(() => {
-        // A: Resume Audio Context (Critical for Safari)
-        if (getAudioContext().state !== 'running') {
-            getAudioContext().resume();
+        userStartAudio();
+        if (inputMode === 'mic') {
+            mic.start();
+            select('#playBtn').addClass('active');
+            select('#playback-info').html('Listening to Mic...');
+            return;
         }
-        
-        // B: Play Sound if loaded
         if (sound && sound.isLoaded()) {
-            // Force Volume to Max
+            if (sound.isPlaying()) return; // Don't double play
+            
             outputVolume(1.0); 
             sound.setVolume(1.0);
-            
             sound.play();
             select('#playback-info').html('Playing...');
-            
-            // Visual confirmation in console
-            console.log("Playing. Audio Context State:", getAudioContext().state);
         }
     });
     
+    // --- PAUSE ---
     select('#pauseBtn').mousePressed(() => {
-        if (sound) {
+        if (inputMode === 'mic') return;
+        if (sound && sound.isPlaying()) {
             sound.pause();
             select('#playback-info').html('Paused');
+        } else if (sound && sound.isPaused()) {
+            sound.play();
+            select('#playback-info').html('Playing...');
         }
     });
     
-    select('#stopBtn').mousePressed(() => {
-        if (sound) sound.stop();
-        resetCanvas();
+    // --- STOP (Music Stop & Rewind) ---
+    select('#stopAudioBtn').mousePressed(() => {
+        if (inputMode === 'mic') {
+            mic.stop();
+            select('#playBtn').removeClass('active');
+            select('#playBtn').html('Start Mic');
+            select('#playback-info').html('Mic Stopped');
+        } else {
+            if (sound) {
+                sound.stop(); // Stops and rewinds to beginning
+                select('#playback-info').html('Stopped (Reset to Start)');
+            }
+        }
     });
 
-    // 3. Viz Selection
+    // --- RESET (Clear Canvas ONLY) ---
+    select('#resetBtn').mousePressed(() => {
+        // Only clear the canvas visually.
+        resetCanvas();
+        select('#playback-info').html('Canvas Cleared (Audio Playing)');
+    });
+
+    // --- FULLSCREEN LOGIC ---
+    // 1. Enter Fullscreen
+    select('#fullscreen-trigger').mousePressed(() => {
+        let fs = fullscreen();
+        fullscreen(!fs);
+    });
+
+    // 2. Exit Fullscreen (The floating button)
+    select('#exit-fs-btn').mousePressed(() => {
+        fullscreen(false);
+    });
+
+    // --- VIZ & COLOR ---
     select('#vizStyle').changed(() => {
         vizStyle = select('#vizStyle').value();
         resetCanvas();
     });
 
-    // 4. Color Selection
     select('#colorScheme').changed(() => {
         colorPalette = select('#colorScheme').value();
     });
 }
 
 function resetCanvas() {
+    clear();
     if (vizStyle === 'optical') background(0);
     else background(255);
-    select('#playback-info').html(vizStyle.toUpperCase() + ' READY');
 }
 
 function windowResized() {
+    // Check fullscreen state directly from p5
+    let isFs = fullscreen();
     let container = select('#canvas-container');
-    let w = container.width;
-    let h = w * 9/16;
-    if (h > container.height) {
-        h = container.height;
-        w = h * 16/9;
+    let body = select('body');
+    
+    if (isFs) {
+        resizeCanvas(windowWidth, windowHeight);
+        container.addClass('fullscreen');
+        body.addClass('is-fullscreen'); // Triggers Exit button visibility
+    } else {
+        // FIX: Use elt.clientWidth here too
+        let w = container.elt.clientWidth;
+        let h = w * 9/16; // Maintain 16:9
+        if (h > container.elt.clientHeight) {
+            h = container.elt.clientHeight;
+            w = h * 16/9;
+        }
+        resizeCanvas(w, h);
+        container.removeClass('fullscreen');
+        body.removeClass('is-fullscreen');
     }
-    resizeCanvas(w, h);
     resetCanvas();
 }

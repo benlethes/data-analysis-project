@@ -1,531 +1,504 @@
-# Data Analysis Project: Sound Visualization
+# Data Analysis Project: Sound Visualization (Enhanced)
 
-An interactive web-based audio visualization tool that transforms sound into dynamic visual art. Upload any audio file and watch it come to life through four distinct visualization modes, each responding in real-time to different frequency ranges and amplitude levels.
+An interactive web-based audio visualization tool that transforms sound into dynamic visual art. Upload audio files, use demo tracks, or connect your microphone to experience real-time visualizations through seven distinct modes.
 
-![Project Banner](docs/banner-placeholder.png)
+## 🆕 What's New in This Version
 
-## 🎯 Project Overview
+### New Features
+- ✅ **Demo Files**: Two built-in demo tracks (Classical & Electronic)
+- ✅ **Microphone Input**: Real-time visualization of live audio
+- ✅ **Fixed Play Bug**: No more issues when clicking play multiple times
+- ✅ **Dynamic Slider**: Intensity changes affect visuals without resetting the canvas
+- ✅ **Fullscreen Mode**: Immersive full-screen viewing
+- ✅ **Mobile Support**: Touch-friendly controls and responsive design
+- ✅ **3 New Visualizations**: Grid Mosaic, Lissajous Curves, Diagonal Weave
+- ✅ **4 New Color Palettes**: Sunset, Ocean, Earth, Midnight (8 total palettes)
+- ✅ **Universal Color Schemes**: All palettes now affect every visualization mode
 
-This project creates real-time audio-reactive visualizations in the browser using p5.js. Users can upload audio files and experience them through multiple visualization styles, each analyzing different aspects of the audio spectrum:
+### Coming Soon
+- 🔄 **MIDI Input**: See guide below for implementation
 
-- **Frequency Analysis**: Separates audio into bass, mid, and treble ranges
-- **Amplitude Detection**: Tracks overall volume levels
-- **Visual Mapping**: Translates audio data into geometric and color-based visuals
-- **Interactive Controls**: Customize intensity, colors, and visualization styles
+---
 
+## 📖 Quick Start Guide
 
-## 📖 User Guide
+### Option 1: Use Demo Files
+1. Open `index.html` in a web browser
+2. Click **"Classical"** or **"Electronic"** demo button
+3. Press **Play** and watch the visualization
 
-### Basic Usage
+### Option 2: Upload Your Own Audio
+1. Click **"Select Audio File"**
+2. Choose any audio file (MP3, WAV, OGG, etc.)
+3. Press **Play**
 
-1. **Select Audio File**: Click "Select Audio File" and choose an audio file (MP3, WAV, OGG, etc.)
-2. **Press Play**: Start playback and watch the visualization react
-3. **Choose Visualization**: Select from 4 different visual styles
-4. **Customize Colors**: Pick from 4 color palettes
-5. **Adjust Intensity**: Use the reactivity slider to control visual intensity
+### Option 3: Use Microphone
+1. Click **"🎤 Microphone"** button
+2. Allow microphone access when prompted
+3. Start making sounds or play music near your mic
 
-### Visualization Modes
+---
 
-#### A. Waveform (Standard)
-Classic oscilloscope-style visualization showing the raw audio waveform.
-- **What it shows**: The actual shape of the sound wave over time
-- **Best for**: Seeing the structure of music, vocals, or beats
-- **Audio mapping**: Direct amplitude visualization
+## 🎨 Visualization Modes
 
-#### B. Optical Flow (3D Lines)
-Creates flowing, fabric-like patterns that warp with the music.
-- **What it shows**: Warped horizontal lines creating moiré patterns
+### A. Waveform (Classic)
+Classic oscilloscope showing the raw audio waveform.
+- **Best for**: Seeing beats, vocals, and song structure
+- **Audio mapping**: Direct amplitude → vertical position
+
+### B. Optical Flow (3D)
+Flowing fabric-like patterns with depth illusion.
 - **Best for**: Electronic music, ambient soundscapes
 - **Audio mapping**: 
-  - Bass → Wave amplitude/distortion
-  - Mid frequencies → Glitch effects
-  - Time → Z-axis movement creating depth
+  - Bass → Wave distortion
+  - Mid → Glitch effects
+  - Time → 3D movement
 
-#### C. Architect (Structure)
-Builds up geometric line drawings resembling architectural blueprints.
-- **What it shows**: Accumulating abstract "floor plans" and construction lines
+### C. Architect (Structure)
+Accumulating geometric blueprints and construction lines.
 - **Best for**: Building suspense, progressive tracks
 - **Audio mapping**:
-  - Volume → Shard generation rate
+  - Volume → Generation rate
   - Treble → Line brightness
-  - High hits → White flash strobe effect
+  - High volume → White flash strobe
 
-#### D. Color Blend (Paint)
-Abstract color painting mode using palette-based rectangles.
-- **What it shows**: Overlapping colored rectangles with blend modes
+### D. Color Blend (Paint)
+Abstract painting with overlapping colored rectangles.
 - **Best for**: Colorful, energetic music
 - **Audio mapping**:
-  - Volume → Number of shapes
-  - Treble → Blend mode intensity (HARD_LIGHT vs BLEND)
-  - Palette selection → Color scheme
+  - Volume → Shape count
+  - Treble → Blend mode (hard light vs normal)
 
-### Color Palettes
+### E. Grid Mosaic (Tiles) *NEW*
+Dynamic color grid that responds to all frequencies.
+- **Best for**: Complex music with many layers
+- **Audio mapping**:
+  - Bass → Grid density (X-axis)
+  - Mid → Grid density (Y-axis)
+  - Treble → Color hue shift
+  - Volume → Brightness
 
-- **Bauhaus (Primary)**: Bold primary colors (purple, yellow, orange, blue, red)
-- **Cyber (Neon/Dark)**: Vibrant neons on dark background (magenta, cyan, yellow, green)
-- **Carbon (Greyscale)**: Monochrome blacks and greys for a minimal aesthetic
-- **Ether (Pastel)**: Soft pastels (pink, mint, cream, peach, lavender)
+### F. Lissajous (Curves) *NEW*
+Mathematical curves creating harmonograph-style patterns.
+- **Best for**: Harmonic music, sustained notes
+- **Audio mapping**:
+  - Bass → Point count (complexity)
+  - Mid → X-axis frequency
+  - Treble → Y-axis frequency
 
-### Reactivity Control
+### G. Diagonal Weave (Lines) *NEW*
+Cross-hatched line patterns with variable thickness.
+- **Best for**: Rhythmic music, beats
+- **Audio mapping**:
+  - Bass → Diagonal line thickness
+  - Treble → Opposite diagonal thickness
 
-The intensity slider adjusts how strongly visuals respond to audio:
-- **Subtle (0-25)**: Gentle, understated movements
-- **Moderate (25-75)**: Balanced response (default: 50)
-- **Extreme (75-100)**: Aggressive, dramatic reactions
+---
 
-## 🔧 Technical Documentation
+## 🎨 Color Palettes
+
+All palettes now work with **every visualization mode**:
+
+- **Bauhaus**: Bold primary colors (purple, yellow, orange, blue, red)
+- **Cyber**: Vibrant neons (magenta, cyan, yellow, green) on dark
+- **Carbon**: Monochrome blacks and greys
+- **Ether**: Soft pastels (pink, mint, cream)
+- **Sunset** *NEW*: Warm oranges, reds, and purples
+- **Ocean** *NEW*: Cool blues and cyans
+- **Earth** *NEW*: Natural browns and tans
+- **Midnight** *NEW*: Deep purples and blues on dark
+
+---
+
+## 🎮 Controls Explained
+
+### 01. Input Source
+- **Select Audio File**: Upload from your computer
+- **Classical/Electronic**: Load demo tracks
+- **Microphone**: Use live audio input
+
+### 02. Transport
+- **Play**: Start playback (only works for audio files, not mic)
+- **Pause**: Pause at current position
+- **Reset**: Stop and clear the canvas
+
+### 03. Visualization
+Choose from 7 different visual styles
+
+### 04. Color Palette
+Choose from 8 color schemes
+
+### 05. Reactivity
+- **Left (Subtle)**: Gentle, understated movements
+- **Middle (50)**: Balanced response (default)
+- **Right (Extreme)**: Aggressive, dramatic reactions
+
+### Fullscreen Button
+Click "⛶ Fullscreen" in the top-right to enter full-screen mode
+
+---
+
+## 📱 Mobile Usage
+
+The app is fully mobile-compatible:
+
+1. **Touch Support**: Tap anywhere to activate audio (required by browsers)
+2. **Responsive Layout**: Controls stack vertically on small screens
+3. **Microphone**: Works great on mobile devices
+4. **Fullscreen**: Tap the fullscreen button for immersive viewing
+
+**Note**: Some browsers may require HTTPS for microphone access on mobile.
+
+---
+
+## 🎹 MIDI Input Implementation Guide
+
+While this version doesn't include MIDI, here's how you can add it:
+
+### What You'll Need
+- A MIDI controller (keyboard, pad controller, etc.)
+- USB or Bluetooth connection to your computer
+- Chrome, Edge, or Opera browser (Web MIDI API support)
+
+### Implementation Steps
+
+#### 1. Add MIDI Button to HTML
+In `index.html`, add after the microphone button:
+
+```html
+<button id="midiBtn" style="margin-top: 5px;">🎹 MIDI Input</button>
+<div id="midiStatus" style="font-size: 0.6rem; margin-top: 3px;">MIDI: Not Connected</div>
+```
+
+#### 2. Add MIDI Variables to sketch.js
+At the top of the file:
+
+```javascript
+let midiAccess;
+let midiNotes = []; // Array to store currently playing notes
+let isMidiMode = false;
+```
+
+#### 3. Add MIDI Setup Function
+
+```javascript
+function setupMIDI() {
+    if (navigator.requestMIDIAccess) {
+        navigator.requestMIDIAccess()
+            .then(onMIDISuccess, onMIDIFailure);
+    } else {
+        select('#midiStatus').html('MIDI: Not Supported');
+        console.log('Web MIDI API not supported');
+    }
+}
+
+function onMIDISuccess(access) {
+    midiAccess = access;
+    const inputs = midiAccess.inputs.values();
+    
+    for (let input of inputs) {
+        input.onmidimessage = handleMIDIMessage;
+        console.log('MIDI Input:', input.name);
+    }
+    
+    if (midiAccess.inputs.size > 0) {
+        select('#midiStatus').html('MIDI: Connected');
+        isMidiMode = true;
+    } else {
+        select('#midiStatus').html('MIDI: No Devices');
+    }
+}
+
+function onMIDIFailure() {
+    select('#midiStatus').html('MIDI: Access Denied');
+    console.log('Could not access MIDI devices');
+}
+
+function handleMIDIMessage(message) {
+    const [command, note, velocity] = message.data;
+    
+    // Note On: command = 144
+    if (command === 144 && velocity > 0) {
+        midiNotes.push({note: note, velocity: velocity});
+        console.log('Note ON:', note, 'Velocity:', velocity);
+    }
+    
+    // Note Off: command = 128 or velocity = 0
+    if (command === 128 || (command === 144 && velocity === 0)) {
+        midiNotes = midiNotes.filter(n => n.note !== note);
+        console.log('Note OFF:', note);
+    }
+}
+```
+
+#### 4. Create MIDI Visualization
+
+```javascript
+function drawMIDIVisualization() {
+    background(0, 20); // Fade effect
+    
+    // Draw each active note
+    for (let i = 0; i < midiNotes.length; i++) {
+        let noteData = midiNotes[i];
+        let note = noteData.note;
+        let velocity = noteData.velocity;
+        
+        // Map MIDI note (0-127) to positions
+        let x = map(note, 0, 127, 0, width);
+        let size = map(velocity, 0, 127, 10, 200) * intensity;
+        
+        // Choose color based on note
+        let hue = map(note, 0, 127, 0, 360);
+        colorMode(HSB);
+        fill(hue, 80, 90, 0.7);
+        noStroke();
+        
+        ellipse(x, height/2, size, size);
+        colorMode(RGB);
+    }
+}
+```
+
+#### 5. Call MIDI Setup in setup()
+
+```javascript
+function setup() {
+    // ... existing setup code ...
+    
+    setupMIDI(); // Add this line
+}
+```
+
+#### 6. Add MIDI Button Handler
+
+```javascript
+select('#midiBtn').mousePressed(() => {
+    if (!isMidiMode) {
+        setupMIDI();
+    }
+});
+```
+
+#### 7. Update draw() Function
+
+```javascript
+function draw() {
+    // ... existing audio analysis ...
+    
+    // Add MIDI mode check
+    if (isMidiMode && midiNotes.length > 0) {
+        drawMIDIVisualization();
+    } else {
+        // ... existing visualization routing ...
+    }
+}
+```
+
+### MIDI Usage Tips
+- **Note Numbers**: Middle C = 60, higher notes = higher numbers
+- **Velocity**: How hard you hit the key (0-127)
+- **Visual Mapping Ideas**:
+  - Note pitch → Horizontal position or color
+  - Velocity → Size or opacity
+  - Number of notes → Shape count
+  - Note range → Different visualizations
+
+### Troubleshooting MIDI
+- **Not working?** Check browser compatibility (Chrome is best)
+- **No devices found?** Ensure MIDI controller is connected before opening the page
+- **Access denied?** Check browser permissions for MIDI
+
+---
+
+## 🛠️ Technical Documentation
 
 ### File Structure
-
 ```
 project/
-│
-├── index.html          # Main HTML structure and UI
+├── index.html          # Main HTML with UI
 ├── sketch.js           # p5.js visualization logic
+├── demo1_classical.mp3 # Demo file 1
+├── demo2_electronic.mp3# Demo file 2
 └── README.md          # This file
 ```
 
 ### Technologies Used
-
-- **[p5.js](https://p5js.org/)** (v1.7.0): Creative coding framework
-- **[p5.sound.js](https://p5js.org/reference/#/libraries/p5.sound)**: Audio analysis library
-- **Vanilla JavaScript**: Core logic
+- **p5.js** (v1.7.0): Creative coding framework
+- **p5.sound**: Audio analysis library
+- **Web Audio API**: Microphone input
+- **Fullscreen API**: Full-screen mode
 - **CSS Grid**: Responsive layout
-- **Google Fonts**: Inter & Space Grotesk typefaces
 
----
-
-## 📄 Code Documentation
-
-### index.html - Structure Breakdown
-
-#### HTML Structure
-```
-<body>
-  ├── <header>                    # Project title overlay
-  ├── <div id="canvas-container"> # Visualization area (16:9)
-  ├── <div id="audio-debug">      # Hidden audio context warning
-  └── <div id="controls-bar">     # Bottom control panel
-      ├── 01. Input Data          # File upload
-      ├── 02. Transport           # Play/Pause/Stop
-      ├── 03. Visualization       # Style selector
-      ├── 04. Color Palette       # Color scheme
-      └── 05. Reactivity          # Intensity slider
-```
-
-#### CSS Architecture
-
-**Design System**
-- Uses CSS custom properties (variables) for theming
-- Grid-based layout for responsive controls
-- Clean, minimal aesthetic inspired by Bauhaus/Swiss design
-
-**Key Layout Features**
-- Canvas maintains 16:9 aspect ratio (cinematic)
-- Flexbox centers canvas in available space
-- Grid creates 5-column control bar
-- All controls have consistent spacing and borders
-
-**Responsive Behavior**
-- Canvas resizes based on available window space
-- Maintains aspect ratio while fitting container
-- Controls remain fixed height at bottom
-
-#### JavaScript Imports
-```html
-<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/addons/p5.sound.min.js"></script>
-<script src="sketch.js"></script>
-```
-
----
-
-### sketch.js - Function Reference
-
-#### Global Variables
-
-```javascript
-// Audio Objects
-let sound;              // p5.SoundFile object for playback
-let fft;                // Fast Fourier Transform analyzer
-let amplitude;          // Amplitude (volume) analyzer
-let audioContextStarted; // Browser audio context status
-
-// Visualization State
-let vizStyle;           // Current visualization mode
-let intensity;          // Reactivity multiplier (0.5-4.0)
-let colorPalette;       // Current color scheme name
-```
-
-#### Core p5.js Functions
-
-##### `setup()`
-Called once when the program starts.
-
-**What it does:**
-1. Calculates optimal canvas size (16:9 ratio)
-2. Creates canvas and attaches to DOM container
-3. Initializes audio analyzers:
-   - `FFT`: Frequency analysis with 1024 bins, 0.8 smoothing
-   - `Amplitude`: Volume level detection
-4. Sets master output volume to 100%
-5. Calls `setupControls()` to bind UI events
-6. Starts audio context monitoring
-
-**Technical Details:**
-- Uses responsive sizing to fit container while maintaining aspect ratio
-- Prioritizes height constraints, then width
-- FFT smoothing (0.8) prevents jittery visualizations
-
-##### `draw()`
-Called 60 times per second (default frame rate).
-
-**What it does:**
-1. Checks if audio is playing
-2. If playing:
-   - Analyzes frequency spectrum via FFT
-   - Extracts bass (20-140 Hz), mid (140-2600 Hz), treble (2600-20000 Hz)
-   - Gets overall amplitude level
-   - Updates intensity from slider value
-3. Routes to appropriate visualization function based on `vizStyle`
-
-**Audio Data Flow:**
-```
-Audio File → FFT Analyzer → Frequency Bins
-                          ↓
-          [Bass | Mid | Treble] + Amplitude
-                          ↓
-              Visualization Function
-```
-
-##### `checkAudioState()`
-Diagnostic function called every second.
-
-**Purpose:** Detects if the browser's AudioContext is suspended (common in Safari and mobile browsers). Shows a warning banner if audio won't play due to browser autoplay policies.
-
----
-
-#### Visualization Functions
-
-##### `drawWaveform(vol)`
-Creates a traditional oscilloscope display.
-
-**Algorithm:**
-1. Clears background to white
-2. Gets time-domain waveform data (1024 samples)
-3. Maps each sample across canvas width
-4. Converts audio values (-1 to 1) to vertical pixel positions
-5. Draws continuous curve using `vertex()` points
-6. Adds center reference line
-
-**Parameters:**
-- `vol`: Current amplitude (0-1), affects line weight via intensity
-
-**Visual Effect:** Shows the actual shape of sound waves, revealing beats, vocals, and transients.
-
-##### `drawOptical(bass, mid)`
-Creates warping, 3D-like line patterns.
-
-**Algorithm:**
-1. Sets dark background
-2. Draws horizontal lines at regular intervals (20px)
-3. For each line:
-   - Calculates sine/cosine waves based on position and time
-   - Applies bass-driven distortion to wave amplitude
-   - Adds noise-based "glitch" effect when mid frequencies spike
-   - Uses time variable for continuous Z-axis movement
-
-**Parameters:**
-- `bass`: Bass energy (0-255) → controls wave distortion amplitude
-- `mid`: Mid energy (0-255) → triggers glitch noise when > 100
-
-**Mathematical Model:**
-```
-distortion = sin(x * 0.02 + time) * cos(y * 0.03 + time) * bassAmplitude
-if (mid > threshold):
-    distortion += noise(x, y) * midScale
-```
-
-**Visual Effect:** Creates flowing, fabric-like patterns that appear to move through 3D space.
-
-##### `drawArchitect(treble, vol)`
-Accumulates geometric line structures over time.
-
-**Algorithm:**
-1. Only draws when volume exceeds threshold (0.05)
-2. Randomly places "floor plan" shards:
-   - 5-vertex polygons with 90° angles (architect style)
-   - Random size based on intensity
-   - Transparent black lines
-3. Occasionally draws vertical "construction lines" in blue
-4. On high hits (vol > 0.7), flashes white overlay (strobe effect)
-
-**Parameters:**
-- `treble`: Treble energy (unused currently, reserved for future brightness control)
-- `vol`: Amplitude (0-1) → controls generation rate and strobe
-
-**Key Feature:** **Does not clear background** - structures accumulate creating complex compositions.
-
-**Visual Effect:** Resembles evolving architectural blueprints or deconstructed building plans.
-
-##### `drawPaint(bass, treble, vol)`
-Paints colored rectangles with blend modes.
-
-**Algorithm:**
-1. Skips drawing if volume too low (< 0.01)
-2. Calculates number of shapes based on volume and intensity
-3. For each shape:
-   - Randomly selects color from current palette
-   - Sets alpha transparency based on volume
-   - Switches blend mode: `HARD_LIGHT` if treble > 150, else `BLEND`
-   - Draws rectangle at random position with random dimensions
-4. Resets blend mode to normal
-
-**Parameters:**
-- `bass`: Bass energy (unused currently)
-- `treble`: Treble energy (0-255) → controls blend mode
-- `vol`: Amplitude (0-1) → controls shape count and transparency
-
-**Blend Modes:**
-- `BLEND`: Normal overlay (additive transparency)
-- `HARD_LIGHT`: High-contrast color mixing (treble-triggered)
-
-**Key Feature:** **Does not clear background** - colors accumulate and mix.
-
-**Visual Effect:** Abstract expressionist painting that builds color density over time.
-
----
-
-#### UI & Audio Control Functions
-
-##### `setupControls()`
-Binds all UI interactions to p5.js and audio objects.
-
-**File Upload Handler:**
-```javascript
-select('#audioFile').changed(function() {
-  // 1. Get file from input
-  // 2. Update filename display
-  // 3. Stop any existing sound
-  // 4. Load new file using Object URL
-  // 5. Enable transport buttons when loaded
-})
-```
-
-**Play Button Handler:**
-Critical for cross-browser compatibility, especially Safari:
-```javascript
-select('#playBtn').mousePressed(() => {
-  // 1. Resume AudioContext (required for Safari/mobile)
-  if (getAudioContext().state !== 'running') {
-    getAudioContext().resume();
-  }
-  
-  // 2. Force maximum volume (defensive coding)
-  outputVolume(1.0);
-  sound.setVolume(1.0);
-  
-  // 3. Start playback
-  sound.play();
-})
-```
-
-**Why this matters:** Modern browsers suspend AudioContext by default until user interaction. This ensures audio actually plays.
-
-**Pause/Stop Handlers:**
-- Pause: Pauses audio at current position
-- Stop: Stops audio and resets canvas
-
-**Visualization Selector:**
-Updates `vizStyle` variable and resets canvas to appropriate background color.
-
-**Color Scheme Selector:**
-Updates `colorPalette` variable (affects paint visualization mode).
-
-##### `resetCanvas()`
-Clears the canvas to appropriate background color based on visualization mode.
-
-**Logic:**
-- Optical mode → Black background
-- All other modes → White background
-
-**Called when:**
-- Changing visualization style
-- Stopping playback
-- Resizing window
-
-##### `windowResized()`
-p5.js built-in function called automatically when browser window resizes.
-
-**What it does:**
-1. Recalculates optimal canvas dimensions
-2. Maintains 16:9 aspect ratio
-3. Resizes canvas
-4. Resets canvas to clean state
-
-**Ensures:** Visualization always fits window without distortion.
-
----
-
-## 🎨 Audio Analysis Explained
-
-### FFT (Fast Fourier Transform)
-
-**What it does:** Converts time-domain audio (waveform) into frequency-domain data (spectrum).
-
-**How it works:**
-1. Takes 1024 audio samples
-2. Applies mathematical transform
-3. Outputs energy levels for different frequency bins
-
-**Frequency Ranges:**
-```
-Bass:   20 Hz - 140 Hz    (kick drums, bass guitar)
-Mid:    140 Hz - 2600 Hz  (vocals, snares, guitars)
-Treble: 2600 Hz - 20kHz   (cymbals, hi-hats, sparkle)
-```
-
-**Smoothing:** The 0.8 parameter creates smooth transitions between frames, preventing visual jitter.
-
-### Amplitude Analysis
-
-**What it does:** Measures overall volume level (RMS - Root Mean Square).
-
-**Output:** Value between 0.0 (silence) and 1.0 (maximum volume).
-
-**Used for:** Controlling shape count, triggering effects, adjusting transparency.
-
----
-
-## 🛠️ Customization Guide
-
-### Adding a New Visualization
-
-1. **Add option to HTML:**
-```html
-<option value="myViz">E. My Visualization</option>
-```
-
-2. **Create visualization function in sketch.js:**
-```javascript
-function drawMyViz(bass, mid, treble, vol) {
-  // Your visualization code here
-  // Use background(255) if you want clearing
-  // Skip background() for accumulative effects
-}
-```
-
-3. **Add to draw() routing:**
-```javascript
-else if (vizStyle === 'myViz') {
-  drawMyViz(bass, mid, treble, vol);
-}
-```
-
-### Adding a New Color Palette
-
-1. **Add to palettes object:**
-```javascript
-const palettes = {
-  // ... existing palettes
-  'myPalette': [[R, G, B], [R, G, B], [R, G, B], ...]
-};
-```
-
-2. **Add option to HTML:**
-```html
-<option value="myPalette">My Palette Name</option>
-```
-
-### Modifying Audio Analysis
-
-**Adjust FFT resolution:**
-```javascript
-// More bins = more frequency detail (but slower)
-fft = new p5.FFT(0.8, 2048);  // Try 512, 1024, 2048, 4096
-```
-
-**Adjust smoothing:**
-```javascript
-// Lower = more reactive, Higher = smoother
-fft = new p5.FFT(0.5, 1024);  // Range: 0.0-1.0
-```
-
-**Get specific frequency ranges:**
-```javascript
-let subBass = fft.getEnergy(20, 60);    // Sub bass
-let kickDrum = fft.getEnergy(60, 140);  // Kick drum range
-let vocals = fft.getEnergy(300, 3000);  // Vocal range
-```
+### Browser Compatibility
+- ✅ Chrome/Edge (recommended)
+- ✅ Firefox
+- ⚠️ Safari (may need user interaction for audio)
+- ✅ Mobile browsers (iOS Safari, Chrome Mobile)
+
+### Audio Analysis Details
+
+**FFT (Fast Fourier Transform)**
+- 1024 frequency bins
+- 0.8 smoothing factor (prevents jitter)
+- Frequency ranges:
+  - Bass: 20-140 Hz
+  - Mid: 140-2600 Hz
+  - Treble: 2600-20000 Hz
+
+**Amplitude**
+- RMS (Root Mean Square) level
+- Range: 0.0 (silence) to 1.0 (maximum)
 
 ---
 
 ## 🐛 Troubleshooting
 
 ### Audio Won't Play
+1. Click the Play button (user interaction required)
+2. Check if "AUDIO CONTEXT SUSPENDED" warning appears
+3. Try refreshing the page
+4. Ensure file format is supported (MP3, WAV, OGG)
 
-**Problem:** "AUDIO CONTEXT SUSPENDED" warning appears.
-
-**Solution:**
-1. Make sure you clicked the Play button (user interaction required)
+### Microphone Not Working
+1. Grant microphone permission when prompted
 2. Check browser console for errors
-3. Try refreshing the page and uploading file again
-4. Some browsers block autoplay - manual play click is required
+3. Ensure microphone is not in use by another app
+4. Try HTTPS (some browsers require secure connection)
 
-### Visualization Not Responding
+### Visualizations Not Responding
+1. Wait for "File Loaded" or "Recording..." message
+2. Check intensity slider (try moving to 75-100%)
+3. Ensure audio has actual sound content (not silence)
+4. Try a different visualization mode
 
-**Problem:** Graphics display but don't react to music.
-
-**Causes & Solutions:**
-- **File not loaded:** Wait for "File Loaded. Press Play." message
-- **Volume too low:** Check intensity slider and audio file volume
-- **Silent audio section:** Visualizations respond to actual audio content
-- **Browser issue:** Try a different browser (Chrome/Firefox recommended)
-
-### Canvas Appears Stretched
-
-**Problem:** Visualization looks distorted.
-
-**Solution:** The canvas maintains 16:9 ratio - resize your browser window and it will recalculate. If using custom CSS, ensure you're not overriding the canvas dimensions.
-
-### Accumulative Modes Too Messy
-
-**Problem:** Architect/Paint modes get too crowded.
-
-**Solutions:**
-- Press Stop to reset the canvas
-- Reduce intensity slider
-- Switch to a different visualization mode temporarily
+### Mobile Issues
+1. Tap the screen once to activate audio context
+2. Disable Low Power Mode on iOS
+3. Use headphones for better performance
+4. Close other apps to free up memory
 
 ---
 
-## 📚 Learning Resources
+## 🎓 For Beginners: How This Works
 
-### Understanding p5.js
-- [p5.js Official Tutorial](https://p5js.org/learn/)
-- [p5.sound Library Reference](https://p5js.org/reference/#/libraries/p5.sound)
-- [Coding Train - p5.js Sound Tutorial](https://thecodingtrain.com/tracks/sound)
+### The Basics
 
-### Audio Visualization Concepts
+**HTML (index.html)**
+- Defines the structure: buttons, sliders, canvas
+- Like building with LEGO blocks - each element has a purpose
+
+**JavaScript (sketch.js)**
+- The "brain" that makes everything work
+- Tells the computer what to do when you click buttons
+- Analyzes the music and creates visuals
+
+**p5.js Library**
+- A tool that makes creative coding easier
+- Handles drawing, colors, and sound analysis
+
+### Key Concepts
+
+**Audio Analysis**
+Think of music as having 3 main parts:
+- **Bass**: Low rumbles (kick drums)
+- **Mid**: Middle tones (vocals, guitars)
+- **Treble**: High sounds (cymbals, hi-hats)
+
+The program "listens" to these and uses the information to control:
+- Colors (what hues to use)
+- Positions (where to draw)
+- Sizes (how big shapes are)
+- Movement (how fast things change)
+
+**The Draw Loop**
+The `draw()` function runs 60 times per second (60 FPS), like a flipbook:
+1. Analyze the current audio
+2. Calculate what to draw
+3. Draw shapes/lines/colors
+4. Repeat
+
+**Intensity Slider**
+Multiplies all visual reactions:
+- Low setting: Visual = AudioLevel × 0.5
+- High setting: Visual = AudioLevel × 4.0
+
+### Learning Path
+
+If you want to understand and modify this project:
+
+1. **Start with p5.js basics**: https://p5js.org/learn/
+2. **Learn about variables**: The `let` statements store information
+3. **Understand functions**: Blocks of code that do specific tasks
+4. **Play with numbers**: Try changing values and see what happens!
+
+**Safe things to experiment with:**
+- Change numbers in color arrays (RGB values: 0-255)
+- Modify `intensity` multipliers
+- Adjust strokeWeight values
+- Change shape sizes
+
+**Example experiment:**
+In `drawWaveform()`, change:
+```javascript
+strokeWeight(1.5 * intensity);
+```
+to:
+```javascript
+strokeWeight(3 * intensity); // Makes the waveform thicker!
+```
+
+---
+
+## 📚 Resources for Learning
+
+### JavaScript Basics
+- [JavaScript.info](https://javascript.info/) - Comprehensive tutorial
+- [Codecademy JavaScript](https://www.codecademy.com/learn/introduction-to-javascript) - Interactive
+
+### p5.js
+- [p5.js Tutorial](https://p5js.org/learn/) - Official guide
+- [The Coding Train](https://thecodingtrain.com/) - Fun video tutorials
+- [p5.js Reference](https://p5js.org/reference/) - All functions explained
+
+### Audio Visualization
 - [FFT Explained](https://betterexplained.com/articles/an-interactive-guide-to-the-fourier-transform/)
-- [Understanding Audio Frequency Ranges](https://www.headphonesty.com/2020/02/audio-frequency-spectrum-explained/)
+- [Audio Frequency Guide](https://www.headphonesty.com/2020/02/audio-frequency-spectrum-explained/)
 
-### Web Audio API
-- [MDN Web Audio API Guide](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)
+---
+
+## 🎯 Next Steps / Ideas for Enhancement
+
+### Easy Modifications
+- Add more color palettes (copy existing palette structure)
+- Create new visualization by copying existing function
+- Adjust frequency ranges for different music styles
+
+### Medium Difficulty
+- Add audio recording/export functionality
+- Create preset combinations (visualization + palette + intensity)
+- Add keyboard shortcuts for controls
+
+### Advanced Features
+- MIDI input (see guide above)
+- WebGL 3D visualizations
+- Audio effects (reverb, delay)
+- Export animation as video
+- Multi-track visualization (analyze multiple files)
 
 ---
 
 ## 📄 License
 
-This project is open-source and available for educational purposes. Feel free to modify and extend it for your own learning.
+This project is open-source and available for educational purposes.
 
 ---
 
 ## 🙏 Acknowledgments
 
-- **p5.js**: Created by Lauren McCarthy and the Processing Foundation
-- **Fonts**: Inter by Rasmus Andersson, Space Grotesk by Florian Karsten
-- **Inspiration**: Bauhaus design movement, generative art community
+- **p5.js**: Lauren McCarthy and Processing Foundation
+- **Fonts**: Inter (Rasmus Andersson), Space Grotesk (Florian Karsten)
+- **Inspiration**: Bauhaus, generative art community
 
 ---
 
+**Happy Visualizing! 🎨🎵**
