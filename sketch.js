@@ -6,6 +6,10 @@ let amplitude;
 let inputMode = 'upload';
 let micActive = false;       // own flag — mic.enabled unreliable in Safari
 
+// Track canvas size to ignore tiny scroll-caused resize events on mobile
+let lastCanvasW = 0;
+let lastCanvasH = 0;
+
 // ── Visualization ──────────────────────────────────────────────
 let vizStyle     = 'waveform';
 let intensity    = 1.0;
@@ -73,6 +77,8 @@ function setup() {
     }
     let canvas = createCanvas(w, h);
     canvas.parent('canvas-container');
+    lastCanvasW = w;
+    lastCanvasH = h;
 
     spectrogramBuffer = createGraphics(w, h);
     spectrogramBuffer.background(bgVal());
@@ -86,13 +92,6 @@ function setup() {
     setupControls();
     background(bgVal());
     setInterval(checkAudioState, 1000);
-
-    // If the mobile audio overlay was already tapped before p5 finished
-    // setting up (audioContextUnlocked flag set in HTML script), resume here.
-    if (window.audioContextUnlocked) {
-        try { userStartAudio(); } catch(e) {}
-        try { getAudioContext().resume(); } catch(e) {}
-    }
 }
 
 function checkAudioState() {
@@ -541,13 +540,11 @@ function setupControls() {
     });
 
     select('#playBtn').mousePressed(() => {
-        // Always attempt to unlock the audio context first — this is the
-        // direct user-gesture call that iOS/Android require. It must be
-        // synchronous and at the top of the handler.
         userStartAudio();
         getAudioContext().resume();
 
         if (vizPaused) {
+            // Just unfreeze — don't restart audio
             vizPaused = false;
             loop();
             select('#pauseBtn').html('Pause');
@@ -557,20 +554,24 @@ function setupControls() {
         }
 
         if (inputMode === 'mic') {
-            select('#playback-info').html('Starting mic...');
             mic.start(() => {
-                // CRITICAL: route FFT to mic only after stream is live.
-                // Calling fft.setInput(mic) before this causes silent data
-                // on Safari/iOS (stream isn't ready yet).
+                // Called when mic stream is confirmed active.
+                // CRITICAL: set FFT input here, not in the dropdown handler.
                 fft.setInput(mic);
-                amplitude.setInput(mic);
                 micActive = true;
                 select('#playBtn').addClass('active');
                 select('#playback-info').html('Listening to mic...');
             });
-            // No setTimeout fallback — it runs outside the gesture window
-            // and iOS will block it anyway. The callback above is reliable
-            // on Chrome, Firefox, and Safari when called from a tap.
+            // Fallback for browsers that don't call the callback:
+            // set fft input after a short delay regardless
+            setTimeout(() => {
+                if (!micActive) {
+                    fft.setInput(mic);
+                    micActive = true;
+                    select('#playBtn').addClass('active');
+                    select('#playback-info').html('Listening to mic...');
+                }
+            }, 300);
             return;
         }
 
@@ -703,6 +704,16 @@ function windowResized() {
                 h = container.elt.clientHeight;
                 w = h * 16 / 9;
             }
+
+            // Ignore tiny changes (< 10 px) — these are caused by the mobile
+            // browser toolbar sliding in/out during scroll, not a real resize.
+            // Also guard against a zero-size container during layout transitions.
+            if (w < 50 || h < 50) return;
+            if (Math.abs(w - lastCanvasW) < 10 &&
+                Math.abs(h - lastCanvasH) < 10) return;
+
+            lastCanvasW = w;
+            lastCanvasH = h;
             resizeCanvas(w, h);
         }
         // If paused: canvas was cleared by resizeCanvas but draw loop is off.
