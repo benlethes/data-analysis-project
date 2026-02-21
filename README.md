@@ -1,6 +1,6 @@
 # Data Analysis Project: Sound Visualization
 
-An interactive, browser-based audio visualization tool developed as a project the University of Vienna. Users can upload an audio file, select a built-in demo track, or connect a microphone and watch their audio transformed into real-time visual art across six distinct visualization modes.
+An interactive, browser-based audio visualization tool developed as a project at the University of Vienna. Users can upload an audio file, select a built-in demo track, or connect a microphone and watch their audio transformed into real-time visual art across six distinct visualization modes.
 
 ---
 
