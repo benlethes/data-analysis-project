@@ -12,7 +12,7 @@
 
     <!-- Title bar in normal document flow — never overlaps canvas -->
     <div id="top-bar">
-        <h1>Data Analysis Project: Sound Visualization</h1>
+        <h1>Data Analysis Project:<wbr> Sound Visualization</h1>
         <div style="display:flex; gap:10px;">
             <button id="info-btn" class="btn-icon" aria-label="About this project">
                 <svg viewBox="0 0 24 24">
@@ -218,7 +218,7 @@
     </div><!-- /overlay -->
 
     <script>
-      // ── Welcome modal ──────────────────────────────────────────
+      // Close modal on × or "Let's go"
       function closeWelcome() {
           var overlay = document.getElementById('welcome-overlay');
           overlay.classList.add('hiding');
@@ -238,34 +238,28 @@
           if (e.target === this) closeWelcome();
       });
 
-      // ── iOS silent mode warning ────────────────────────────────
-      // Web Audio API is muted by iOS's Ring/Silent switch — show a
-      // dismissible banner so users know what to do.
-      var isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-      if (isIOS) {
-          var banner = document.getElementById('ios-silent-banner');
-          banner.style.display = 'flex';
+      // iOS silent mode banner
+      if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+          document.getElementById('ios-silent-banner').style.display = 'flex';
           document.getElementById('ios-silent-dismiss').addEventListener('click', function() {
-              banner.style.display = 'none';
+              document.getElementById('ios-silent-banner').style.display = 'none';
           });
       }
     </script>
 
-    <!-- iOS silent mode warning — only shown on iPhone/iPad (JS below) -->
+    <!-- iOS silent mode warning — only shown on iPhone/iPad -->
     <div id="ios-silent-banner" style="display:none;">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="flex-shrink:0;">
             <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
         </svg>
-        <span>No sound? Check your <strong>Ring/Silent switch</strong> — iOS mutes Web Audio in silent mode.</span>
+        <span>No sound? Disable your <strong>Ring/Silent switch</strong> — iOS mutes web audio in silent mode.</span>
         <button id="ios-silent-dismiss" aria-label="Dismiss">✕</button>
     </div>
 
     <style>
         #ios-silent-banner {
             position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
+            bottom: 0; left: 0; right: 0;
             z-index: 700;
             background: #1a1a2e;
             color: #e0e0e0;
@@ -276,13 +270,8 @@
             gap: 0.6rem;
             border-top: 1px solid rgba(255,255,255,0.1);
         }
-        #ios-silent-banner span {
-            flex: 1;
-            line-height: 1.4;
-        }
-        #ios-silent-banner strong {
-            color: #fff;
-        }
+        #ios-silent-banner span { flex: 1; line-height: 1.4; }
+        #ios-silent-banner strong { color: #fff; }
         #ios-silent-dismiss {
             background: none;
             border: none;
@@ -290,12 +279,9 @@
             font-size: 1rem;
             cursor: pointer;
             padding: 0 0.2rem;
-            line-height: 1;
             flex-shrink: 0;
         }
-        #ios-silent-dismiss:hover {
-            color: #fff;
-        }
+        #ios-silent-dismiss:hover { color: #fff; }
     </style>
 
     <script src="sketch.js"></script>
