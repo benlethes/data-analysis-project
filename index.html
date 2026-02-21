@@ -4,302 +4,32 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Data Analysis Project: Sound Visualization</title>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400&family=Space+Grotesk:wght@400;600&display=swap" rel="stylesheet">
-    
-    <style>
-        :root {
-            --bg: #ffffff;
-            --fg: #111111;
-            --accent: #0000ff;
-            --border: #dddddd;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            background-color: var(--bg);
-            color: var(--fg);
-            font-family: 'Inter', sans-serif;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        /* CANVAS AREA */
-        #canvas-container {
-            flex-grow: 1;
-            width: 100%;
-            background: #f8f8f8;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        /* Fullscreen override class */
-        #canvas-container.fullscreen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 999;
-            background: #000;
-        }
-
-        /* HEADER */
-        header {
-            position: absolute;
-            top: 20px;
-            left: 30px;
-            z-index: 100;
-            pointer-events: none;
-        }
-
-        h1 {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 1.2rem;
-            text-transform: uppercase;
-            letter-spacing: -0.02em;
-            background: var(--bg);
-            padding: 5px 10px;
-            border: 1px solid var(--fg);
-            display: inline-block;
-        }
-        
-        /* CONTROLS (Top Right) */
-        .top-controls {
-            position: absolute;
-            top: 20px;
-            right: 30px;
-            z-index: 100;
-            display: flex;
-            gap: 10px;
-        }
-        
-        /* Button with Icon Styling */
-        .btn-icon {
-            display: flex;
-            align-items: center;
-            gap: 8px; /* Space between icon and text */
-            padding-right: 12px; /* Slight adjustment for visual balance */
-        }
-        
-        .btn-icon svg {
-            width: 14px;
-            height: 14px;
-            fill: currentColor;
-        }
-
-        /* Floating Exit Button (Hidden by default) */
-        #exit-fs-btn {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-            background: var(--bg); 
-            color: var(--fg);
-            border: 1px solid var(--fg);
-            padding: 10px 20px;
-            font-family: 'Space Grotesk', sans-serif;
-            text-transform: uppercase;
-            cursor: pointer;
-            display: none; 
-            align-items: center;
-            gap: 8px;
-            transition: all 0.2s; 
-        }
-        
-        #exit-fs-btn:hover {
-            background: var(--fg);
-            color: var(--bg);
-        }
-        
-        body.is-fullscreen #exit-fs-btn {
-            display: flex;
-        }
-
-        /* BOTTOM COMMAND BAR */
-        #controls-bar {
-            height: 140px; 
-            border-top: 1px solid var(--fg);
-            background: var(--bg);
-            display: grid;
-            grid-template-columns: 280px 1fr 200px 200px 200px;
-            align-items: start; 
-            transition: all 0.3s ease;
-        }
-
-        .control-group {
-            padding: 20px; 
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            border-right: 1px solid var(--border);
-            gap: 12px;
-        }
-
-        .label {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 0.65rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            color: #666;
-            letter-spacing: 0.05em;
-            line-height: 1; 
-        }
-
-        /* UI ELEMENTS */
-        button {
-            background: transparent;
-            border: 1px solid var(--fg);
-            color: var(--fg);
-            font-family: 'Space Grotesk', sans-serif;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            padding: 8px 16px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        button:hover:not(:disabled) {
-            background: var(--fg);
-            color: var(--bg);
-        }
-        
-        button:disabled {
-            border-color: #ccc;
-            color: #ccc;
-            cursor: not-allowed;
-        }
-        
-        button.active {
-            background: var(--accent);
-            color: white;
-            border-color: var(--accent);
-        }
-
-        select {
-            font-family: 'Inter', sans-serif;
-            font-size: 0.8rem;
-            padding: 8px;
-            border: 1px solid var(--border);
-            background: transparent;
-            width: 100%;
-            cursor: pointer;
-            outline: none;
-        }
-
-        .upload-container {
-            display: none; 
-        }
-        .upload-container.visible {
-            display: block;
-        }
-
-        .file-upload {
-            position: relative;
-            overflow: hidden;
-            display: inline-block;
-            width: 100%;
-        }
-        .file-upload input[type=file] {
-            position: absolute;
-            left: 0; top: 0; opacity: 0; 
-            width: 100%; height: 100%;
-            cursor: pointer;
-        }
-
-        input[type="range"] {
-            width: 100%;
-            height: 2px;
-            background: var(--fg);
-            -webkit-appearance: none;
-            outline: none;
-            margin-top: 10px;
-        }
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 12px;
-            height: 12px;
-            background: var(--accent);
-            cursor: pointer;
-            border-radius: 0;
-        }
-
-        #playback-info {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 0.7rem;
-            color: var(--accent);
-            margin-top: 5px;
-        }
-        
-        #audio-debug {
-            position: fixed;
-            bottom: 160px;
-            right: 20px;
-            background: red;
-            color: white;
-            padding: 5px 10px;
-            font-family: monospace;
-            font-size: 10px;
-            display: none;
-            z-index: 200;
-        }
-
-        /* --- MOBILE RESPONSIVENESS --- */
-        @media (max-width: 900px) {
-            body {
-                height: 100%; 
-                overflow-y: auto;
-            }
-            
-            #canvas-container {
-                height: 60vh;
-                flex-grow: 0;
-            }
-
-            #controls-bar {
-                height: auto;
-                grid-template-columns: 1fr;
-                border-top: none;
-            }
-
-            .control-group {
-                border-right: none;
-                border-bottom: 1px solid var(--border);
-                padding: 20px;
-                height: auto;
-            }
-            
-            h1 { font-size: 1rem; }
-            
-            #fullscreen-trigger { display: none; } 
-        }
-
-    </style>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/addons/p5.sound.min.js"></script>
 </head>
 <body>
 
-    <header>
+    <!-- Title bar in normal document flow — never overlaps canvas -->
+    <div id="top-bar">
         <h1>Data Analysis Project: Sound Visualization</h1>
-    </header>
-    
-    <div class="top-controls">
-        <button id="fullscreen-trigger" class="btn-icon">
-            <svg viewBox="0 0 24 24">
-                <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
-            </svg>
-            Fullscreen
-        </button>
+        <div style="display:flex; gap:10px;">
+            <button id="info-btn" class="btn-icon" aria-label="About this project">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                </svg>
+                Info
+            </button>
+            <button id="fullscreen-trigger" class="btn-icon">
+                <svg viewBox="0 0 24 24">
+                    <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+                </svg>
+                Fullscreen
+            </button>
+        </div>
     </div>
 
+    <!-- Floating exit — only shown when fullscreen is active (CSS class) -->
     <button id="exit-fs-btn">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
             <path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
@@ -307,12 +37,12 @@
         Exit Fullscreen
     </button>
 
-    <div id="canvas-container">
-        </div>
-    
+    <div id="canvas-container"></div>
     <div id="audio-debug">AUDIO CONTEXT SUSPENDED</div>
 
     <div id="controls-bar">
+
+        <!-- 01. Input Source -->
         <div class="control-group">
             <div class="label">01. Input Source</div>
             <select id="audioSource">
@@ -321,20 +51,19 @@
                 <option value="demo2">Demo: Electronic</option>
                 <option value="mic">Microphone (Live)</option>
             </select>
-            
             <div id="uploadGroup" class="upload-container visible">
                 <div class="file-upload">
                     <button style="width:100%">Select Audio File</button>
                     <input type="file" id="audioFile" accept="audio/*">
                 </div>
             </div>
-            
-            <div id="fileName" style="font-size: 0.7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Waiting for input...</div>
+            <div id="fileName">Waiting for input...</div>
         </div>
 
+        <!-- 02. Transport -->
         <div class="control-group">
             <div class="label">02. Transport</div>
-            <div style="display: flex; gap: 10px;">
+            <div style="display:flex; gap:10px;">
                 <button id="playBtn" disabled>Play</button>
                 <button id="pauseBtn" disabled>Pause</button>
                 <button id="stopAudioBtn" disabled>Stop</button>
@@ -343,6 +72,7 @@
             <div id="playback-info">System Ready</div>
         </div>
 
+        <!-- 03. Visualization + background toggle (always visible) -->
         <div class="control-group">
             <div class="label">03. Visualization</div>
             <select id="vizStyle">
@@ -350,9 +80,17 @@
                 <option value="optical">B. Optical Flow (3D Lines)</option>
                 <option value="architect">C. Architect (Structure)</option>
                 <option value="paint">D. Color Blend (Paint)</option>
+                <option value="spectrogram">E. Spectrogram (Frequency/Time)</option>
+                <option value="rimington">F. Rimington (Color Organ)</option>
             </select>
+            <!-- Background toggle — applies to all visualizations -->
+            <div class="option-toggle">
+                <input type="checkbox" id="bgToggle" style="accent-color:var(--accent);">
+                <label for="bgToggle" class="toggle-label">Dark background</label>
+            </div>
         </div>
 
+        <!-- 04. Color Palette + conditional per-viz toggles -->
         <div class="control-group">
             <div class="label">04. Color Palette</div>
             <select id="colorScheme">
@@ -364,9 +102,24 @@
                 <option value="earth">Earth (Natural)</option>
                 <option value="midnight">Midnight (Deep)</option>
             </select>
+
+            <!-- Shown only for Spectrogram -->
+            <div id="spectrogramAxesGroup" class="option-toggle" style="display:none;">
+                <input type="checkbox" id="spectrogramAxesToggle" checked
+                       style="accent-color:var(--accent);">
+                <label for="spectrogramAxesToggle" class="toggle-label">Show frequency axes</label>
+            </div>
+
+            <!-- Shown only for Rimington -->
+            <div id="legendToggleGroup" class="option-toggle" style="display:none;">
+                <input type="checkbox" id="legendToggle" checked
+                       style="accent-color:var(--accent);">
+                <label for="legendToggle" class="toggle-label">Show note legend</label>
+            </div>
         </div>
 
-        <div class="control-group" style="border-right: none;">
+        <!-- 05. Reactivity -->
+        <div class="control-group" style="border-right:none;">
             <div class="label">05. Reactivity</div>
             <input type="range" id="intensitySlider" min="0" max="100" value="50">
             <div style="display:flex; justify-content:space-between; font-size:0.6rem; margin-top:2px;">
@@ -374,10 +127,118 @@
                 <span>Extreme</span>
             </div>
         </div>
+
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/addons/p5.sound.min.js"></script>
+    <!-- ══════════════════════════════════════════════════════
+         WELCOME MODAL — shown on first load, dismissed by user
+         ══════════════════════════════════════════════════════ -->
+    <div id="welcome-overlay">
+      <div id="welcome-modal" role="dialog" aria-modal="true" aria-labelledby="welcome-heading">
+
+        <!-- Close × -->
+        <button id="welcome-close" aria-label="Close">
+            <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+
+        <div id="welcome-modal-inner">
+
+          <div class="welcome-title" id="welcome-heading">Sound Visualization</div>
+          <div class="welcome-subtitle">Data Analysis Project &nbsp;·&nbsp; University of Vienna</div>
+
+          <!-- About -->
+          <div class="welcome-section-title">About</div>
+          <p class="welcome-body">
+            This tool transforms audio into real-time visual art. Upload a track, use a demo,
+            or plug in your microphone — then watch the music become color, shape, and motion.
+            Each visualization mode reacts differently to bass, mid, and treble frequencies.
+          </p>
+
+          <!-- How to use -->
+          <div class="welcome-section-title">How to use</div>
+          <ol class="welcome-steps">
+            <li><strong>Choose an input</strong> — upload an audio file, pick a demo track, or select Microphone.</li>
+            <li><strong>Press Play</strong> (or "Start Mic") to begin.</li>
+            <li><strong>Pick a visualization</strong> from the dropdown — each one responds to sound differently.</li>
+            <li><strong>Adjust the palette, background and reactivity</strong> to your taste.</li>
+            <li><strong>Hit Fullscreen</strong> for the full experience. Hover the top-right corner to exit.</li>
+          </ol>
+
+          <!-- Visualizations -->
+          <div class="welcome-section-title">Visualization Modes</div>
+          <div class="welcome-viz-grid">
+            <div class="welcome-viz-item">
+              <span class="welcome-viz-name">A · Waveform</span>
+              <span class="welcome-viz-desc">Classic oscilloscope — raw audio signal drawn across the canvas.</span>
+            </div>
+            <div class="welcome-viz-item">
+              <span class="welcome-viz-name">B · Optical Flow</span>
+              <span class="welcome-viz-desc">Flowing lines distorted by bass and mid frequencies.</span>
+            </div>
+            <div class="welcome-viz-item">
+              <span class="welcome-viz-name">C · Architect</span>
+              <span class="welcome-viz-desc">Accumulating geometric lines and flashes that build over time.</span>
+            </div>
+            <div class="welcome-viz-item">
+              <span class="welcome-viz-name">D · Color Blend</span>
+              <span class="welcome-viz-desc">Overlapping painted rectangles driven by volume and treble.</span>
+            </div>
+            <div class="welcome-viz-item">
+              <span class="welcome-viz-name">E · Spectrogram</span>
+              <span class="welcome-viz-desc">Scrolling time–frequency map. Bass at bottom, treble at top.</span>
+            </div>
+            <div class="welcome-viz-item">
+              <span class="welcome-viz-name">F · Rimington</span>
+              <span class="welcome-viz-desc">Historical color-organ: each musical note maps to a spectrum color.</span>
+            </div>
+          </div>
+
+          <!-- Options -->
+          <div class="welcome-section-title">Options</div>
+          <p class="welcome-body">
+            <strong>Color Palette</strong> — 7 schemes (Bauhaus, Cyber, Carbon, Sunset, Ocean, Earth, Midnight).<br>
+            <strong>Dark / Light background</strong> — switch for any visualization.<br>
+            <strong>Reactivity</strong> — from subtle to extreme visual response.<br>
+            <strong>Pause</strong> — freezes the canvas as a snapshot.<br>
+            <strong>Show/hide axes</strong> (Spectrogram) and <strong>note legend</strong> (Rimington).
+          </p>
+
+          <!-- Footer -->
+          <div class="welcome-footer">
+            <div class="welcome-byline">
+              Have fun exploring!<br>
+              <strong>— Ben Seegatz</strong><br>
+              <span style="font-size:0.65rem; color:#aaa;">Data Analysis Project · University of Vienna</span>
+            </div>
+            <button id="welcome-start">Let's go →</button>
+          </div>
+
+        </div><!-- /inner -->
+      </div><!-- /modal -->
+    </div><!-- /overlay -->
+
+    <script>
+      // Close modal on × or "Let's go"
+      function closeWelcome() {
+          var overlay = document.getElementById('welcome-overlay');
+          overlay.classList.add('hiding');
+          overlay.addEventListener('animationend', function() {
+              overlay.style.display = 'none';
+          }, { once: true });
+      }
+      function openWelcome() {
+          var overlay = document.getElementById('welcome-overlay');
+          overlay.style.display = 'flex';
+          overlay.classList.remove('hiding');
+      }
+      document.getElementById('welcome-close').addEventListener('click', closeWelcome);
+      document.getElementById('welcome-start').addEventListener('click', closeWelcome);
+      document.getElementById('info-btn').addEventListener('click', openWelcome);
+      document.getElementById('welcome-overlay').addEventListener('click', function(e) {
+          if (e.target === this) closeWelcome();
+      });
+    </script>
+
     <script src="sketch.js"></script>
 </body>
 </html>

@@ -1,0 +1,562 @@
+/* ==========================================
+   AUDIO VISUALIZER
+   Data Analysis Project
+   ========================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;600;700&display=swap');
+
+:root {
+    --bg:         #ffffff;
+    --fg:         #111111;
+    --accent:     #0000ff;
+    --border:     #dddddd;
+    --font-main:  'Work Sans', sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    background-color: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-main);
+    font-weight: 400;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* ==========================================
+   CANVAS AREA
+   ========================================== */
+
+#canvas-container {
+    flex-grow: 1;
+    width: 100%;
+    background: #f8f8f8;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+#canvas-container.fullscreen {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    z-index: 999;
+    background: #000;
+}
+
+/* ==========================================
+   TOP BAR  (title + fullscreen button)
+   In normal flex flow — never overlaps canvas.
+   ========================================== */
+
+#top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    background: var(--bg);
+    z-index: 10;
+}
+
+h1 {
+    font-family: var(--font-main);
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: -0.02em;
+}
+
+/* ==========================================
+   BUTTONS
+   ========================================== */
+
+.btn-icon {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-right: 12px;
+}
+
+.btn-icon svg {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
+}
+
+/* Floating exit fullscreen button */
+#exit-fs-btn {
+    position: fixed;
+    top: 20px; right: 20px;
+    z-index: 1000;
+    background: var(--bg);
+    color: var(--fg);
+    border: 1px solid var(--fg);
+    padding: 10px 20px;
+    font-family: var(--font-main);
+    font-weight: 600;
+    text-transform: uppercase;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+#exit-fs-btn:hover { background: var(--fg); color: var(--bg); }
+
+/* In fullscreen: button exists (display:flex) but is invisible until hovered */
+body.is-fullscreen #exit-fs-btn {
+    display: flex;
+    opacity: 0;
+    transition: opacity 0.3s, background 0.2s, color 0.2s;
+}
+body.is-fullscreen #exit-fs-btn:hover {
+    opacity: 1;
+    background: var(--fg);
+    color: var(--bg);
+}
+
+/* ==========================================
+   BOTTOM COMMAND BAR
+   ========================================== */
+
+#controls-bar {
+    height: 150px;
+    border-top: 1px solid var(--fg);
+    background: var(--bg);
+    display: grid;
+    grid-template-columns: 280px 1fr 220px 220px 200px;
+    align-items: start;
+    transition: all 0.3s ease;
+}
+
+.control-group {
+    padding: 18px 20px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    border-right: 1px solid var(--border);
+    gap: 10px;
+}
+
+.label {
+    font-family: var(--font-main);
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #666;
+    letter-spacing: 0.05em;
+    line-height: 1;
+}
+
+/* ==========================================
+   CHECKBOX TOGGLES
+   Used for: dark background, show axes, show legend
+   ========================================== */
+
+.option-toggle {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.option-toggle input[type="checkbox"] {
+    width: 13px;
+    height: 13px;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin: 0;
+}
+
+/* Same visual weight as .label but sentence-case (no text-transform) */
+.toggle-label {
+    font-family: var(--font-main);
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #666;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    line-height: 1;
+}
+
+/* ==========================================
+   UI ELEMENTS
+   ========================================== */
+
+button {
+    background: transparent;
+    border: 1px solid var(--fg);
+    color: var(--fg);
+    font-family: var(--font-main);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+button:hover:not(:disabled) { background: var(--fg); color: var(--bg); }
+button:disabled { border-color: #ccc; color: #ccc; cursor: not-allowed; }
+button.active   { background: var(--accent); color: white; border-color: var(--accent); }
+
+select {
+    font-family: var(--font-main);
+    font-size: 0.8rem;
+    font-weight: 400;
+    padding: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    width: 100%;
+    cursor: pointer;
+    outline: none;
+}
+
+/* ==========================================
+   FILE UPLOAD
+   ========================================== */
+
+.upload-container { display: none; }
+.upload-container.visible { display: block; }
+
+.file-upload {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+    width: 100%;
+}
+
+.file-upload input[type=file] {
+    position: absolute;
+    left: 0; top: 0;
+    opacity: 0;
+    width: 100%; height: 100%;
+    cursor: pointer;
+}
+
+/* ==========================================
+   RANGE SLIDER
+   ========================================== */
+
+input[type="range"] {
+    width: 100%;
+    height: 2px;
+    background: var(--fg);
+    -webkit-appearance: none;
+    outline: none;
+    margin-top: 10px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px; height: 12px;
+    background: var(--accent);
+    cursor: pointer;
+    border-radius: 0;
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 12px; height: 12px;
+    background: var(--accent);
+    cursor: pointer;
+    border-radius: 0;
+    border: none;
+}
+
+/* ==========================================
+   STATUS & DEBUG
+   ========================================== */
+
+#playback-info {
+    font-family: var(--font-main);
+    font-size: 0.7rem;
+    font-weight: 400;
+    color: var(--accent);
+    margin-top: 2px;
+}
+
+#fileName {
+    font-family: var(--font-main);
+    font-size: 0.7rem;
+    font-weight: 300;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#audio-debug {
+    position: fixed;
+    bottom: 160px; right: 20px;
+    background: red;
+    color: white;
+    padding: 5px 10px;
+    font-family: monospace;
+    font-size: 10px;
+    display: none;
+    z-index: 200;
+}
+
+/* ==========================================
+   WELCOME MODAL
+   ========================================== */
+
+#welcome-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeInOverlay 0.4s ease;
+}
+
+@keyframes fadeInOverlay {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+#welcome-overlay.hiding {
+    animation: fadeOutOverlay 0.35s ease forwards;
+}
+
+@keyframes fadeOutOverlay {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+}
+
+#welcome-modal {
+    background: #fff;
+    border: 2px solid #111;
+    max-width: 640px;
+    width: calc(100% - 40px);
+    max-height: 88vh;
+    overflow-y: auto;
+    position: relative;
+    animation: slideUp 0.4s ease;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(24px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* Blue accent bar across the top */
+#welcome-modal::before {
+    content: '';
+    display: block;
+    height: 4px;
+    background: #0000ff;
+}
+
+#welcome-modal-inner {
+    padding: 32px 36px 28px;
+}
+
+#welcome-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: none;
+    border: none;
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #111;
+    padding: 0;
+    font-size: 1.1rem;
+    transition: color 0.15s;
+}
+
+#welcome-close:hover { color: #0000ff; }
+#welcome-close svg { width: 18px; height: 18px; fill: currentColor; pointer-events: none; }
+
+.welcome-title {
+    font-family: var(--font-main);
+    font-size: 1.3rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+    color: #111;
+    margin-bottom: 4px;
+}
+
+.welcome-subtitle {
+    font-family: var(--font-main);
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: #0000ff;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 24px;
+}
+
+.welcome-section-title {
+    font-family: var(--font-main);
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #0000ff;
+    margin: 20px 0 8px;
+    border-bottom: 1px solid #e5e5e5;
+    padding-bottom: 5px;
+}
+
+.welcome-section-title:first-of-type {
+    margin-top: 0;
+}
+
+.welcome-body {
+    font-family: var(--font-main);
+    font-size: 0.82rem;
+    font-weight: 400;
+    color: #333;
+    line-height: 1.6;
+    margin-bottom: 10px;
+}
+
+.welcome-steps {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 6px;
+    counter-reset: steps;
+}
+
+.welcome-steps li {
+    font-family: var(--font-main);
+    font-size: 0.8rem;
+    color: #333;
+    padding: 5px 0 5px 28px;
+    position: relative;
+    line-height: 1.5;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.welcome-steps li:last-child { border-bottom: none; }
+
+.welcome-steps li::before {
+    counter-increment: steps;
+    content: counter(steps);
+    position: absolute;
+    left: 0;
+    top: 5px;
+    width: 18px;
+    height: 18px;
+    background: #0000ff;
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-main);
+}
+
+.welcome-viz-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.welcome-viz-item {
+    background: #f8f8f8;
+    border-left: 3px solid #0000ff;
+    padding: 7px 10px;
+}
+
+.welcome-viz-name {
+    font-family: var(--font-main);
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #111;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.welcome-viz-desc {
+    font-family: var(--font-main);
+    font-size: 0.68rem;
+    color: #555;
+    line-height: 1.4;
+}
+
+.welcome-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: 1px solid #e5e5e5;
+}
+
+.welcome-byline {
+    font-family: var(--font-main);
+    font-size: 0.72rem;
+    color: #888;
+}
+
+.welcome-byline strong {
+    color: #111;
+    font-weight: 700;
+}
+
+#welcome-start {
+    background: #0000ff;
+    color: #fff;
+    border: none;
+    font-family: var(--font-main);
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 12px 28px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+#welcome-start:hover { background: #111; }
+
+@media (max-width: 600px) {
+    #welcome-modal-inner { padding: 24px 20px 20px; }
+    .welcome-viz-grid { grid-template-columns: 1fr; }
+    .welcome-footer { flex-direction: column; gap: 14px; align-items: flex-start; }
+}
+
+/* ==========================================
+   MOBILE
+   ========================================== */
+
+@media (max-width: 900px) {
+    body { height: 100%; overflow-y: auto; }
+
+    #canvas-container { height: 60vh; flex-grow: 0; }
+
+    #controls-bar {
+        height: auto;
+        grid-template-columns: 1fr;
+        border-top: none;
+    }
+
+    .control-group {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding: 20px;
+        height: auto;
+    }
+
+    h1 { font-size: 1rem; }
+    #fullscreen-trigger { display: none; }
+}
