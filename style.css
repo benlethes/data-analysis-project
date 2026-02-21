@@ -559,4 +559,43 @@ input[type="range"]::-moz-range-thumb {
 
     h1 { font-size: 1rem; }
     #fullscreen-trigger { display: none; }
+
+    /* Force headline to break after the colon */
+    .title-part1 { display: block; }
+    .title-part2 { display: block; }
+}
+
+/* ==========================================
+   IOS SILENT MODE BANNER
+   ========================================== */
+
+#ios-silent-banner {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 900;
+    background: #d97706;
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 500;
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+}
+
+#ios-silent-banner span { flex: 1; line-height: 1.5; }
+#ios-silent-banner strong { font-weight: 700; text-decoration: underline; }
+
+#ios-silent-dismiss {
+    background: rgba(0,0,0,0.2);
+    border: none;
+    color: #fff;
+    font-size: 0.8rem;
+    font-family: var(--font-main);
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0.25rem 0.6rem;
+    border-radius: 4px;
+    flex-shrink: 0;
 }
