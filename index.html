@@ -12,7 +12,7 @@
 
     <!-- Title bar in normal document flow — never overlaps canvas -->
     <div id="top-bar">
-        <h1>Data Analysis Project:<wbr> Sound Visualization</h1>
+        <h1><span class="title-part1">Data Analysis Project:</span><span class="title-part2"> Sound Visualization</span></h1>
         <div style="display:flex; gap:10px;">
             <button id="info-btn" class="btn-icon" aria-label="About this project">
                 <svg viewBox="0 0 24 24">
@@ -237,14 +237,6 @@
       document.getElementById('welcome-overlay').addEventListener('click', function(e) {
           if (e.target === this) closeWelcome();
       });
-
-      // iOS silent mode banner
-      if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-          document.getElementById('ios-silent-banner').style.display = 'flex';
-          document.getElementById('ios-silent-dismiss').addEventListener('click', function() {
-              document.getElementById('ios-silent-banner').style.display = 'none';
-          });
-      }
     </script>
 
     <!-- iOS silent mode warning — only shown on iPhone/iPad -->
@@ -283,6 +275,16 @@
         }
         #ios-silent-dismiss:hover { color: #fff; }
     </style>
+
+    <script>
+      // iOS silent mode banner — element exists here so getElementById works
+      if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+          document.getElementById('ios-silent-banner').style.display = 'flex';
+          document.getElementById('ios-silent-dismiss').addEventListener('click', function() {
+              document.getElementById('ios-silent-banner').style.display = 'none';
+          });
+      }
+    </script>
 
     <script src="sketch.js"></script>
 </body>
