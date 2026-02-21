@@ -217,13 +217,95 @@
       </div><!-- /modal -->
     </div><!-- /overlay -->
 
+    <!-- ══════════════════════════════════════════════════════
+         MOBILE AUDIO UNLOCK OVERLAY
+         Shown only on iOS / Android after the welcome modal.
+         A direct tap is the only reliable way to unlock the
+         Web Audio API on mobile browsers.
+         ══════════════════════════════════════════════════════ -->
+    <div id="mobile-audio-overlay" style="display:none;">
+        <div id="mobile-audio-prompt">
+            <div id="mobile-audio-icon">
+                <svg viewBox="0 0 24 24" width="44" height="44" fill="white">
+                    <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                </svg>
+            </div>
+            <p id="mobile-audio-title">Tap to enable audio</p>
+            <p id="mobile-audio-sub">Mobile browsers require a tap before<br>sound can play. This only happens once.</p>
+        </div>
+    </div>
+
+    <style>
+        /* ── Mobile audio unlock overlay ── */
+        #mobile-audio-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 800;          /* above canvas, below welcome modal (900) */
+            background: rgba(0, 0, 0, 0.82);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            animation: mobileOverlayIn 0.35s ease both;
+        }
+        @keyframes mobileOverlayIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+        #mobile-audio-overlay.hiding {
+            animation: mobileOverlayOut 0.3s ease both;
+        }
+        @keyframes mobileOverlayOut {
+            from { opacity: 1; }
+            to   { opacity: 0; }
+        }
+        #mobile-audio-prompt {
+            text-align: center;
+            color: white;
+            padding: 2rem;
+            pointer-events: none;  /* let clicks pass through to overlay */
+        }
+        #mobile-audio-icon {
+            width: 88px;
+            height: 88px;
+            margin: 0 auto 1.2rem;
+            background: rgba(255,255,255,0.12);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: mobilePulse 1.6s ease-in-out infinite;
+        }
+        @keyframes mobilePulse {
+            0%, 100% { transform: scale(1);    box-shadow: 0 0 0 0   rgba(255,255,255,0.3); }
+            50%       { transform: scale(1.07); box-shadow: 0 0 0 18px rgba(255,255,255,0);   }
+        }
+        #mobile-audio-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin: 0 0 0.5rem;
+            letter-spacing: 0.02em;
+        }
+        #mobile-audio-sub {
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.65);
+            margin: 0;
+            line-height: 1.5;
+        }
+    </style>
+
     <script>
-      // Close modal on × or "Let's go"
+      // ── Welcome modal ──────────────────────────────────────────
       function closeWelcome() {
           var overlay = document.getElementById('welcome-overlay');
           overlay.classList.add('hiding');
           overlay.addEventListener('animationend', function() {
               overlay.style.display = 'none';
+              // After welcome closes, show the mobile audio prompt if needed
+              showMobileAudioOverlayIfNeeded();
           }, { once: true });
       }
       function openWelcome() {
@@ -237,6 +319,61 @@
       document.getElementById('welcome-overlay').addEventListener('click', function(e) {
           if (e.target === this) closeWelcome();
       });
+
+      // ── Mobile audio unlock ────────────────────────────────────
+      var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      var audioContextUnlocked = false;
+
+      function showMobileAudioOverlayIfNeeded() {
+          if (!isMobile || audioContextUnlocked) return;
+          var mo = document.getElementById('mobile-audio-overlay');
+          mo.style.display = 'flex';
+      }
+
+      // Core unlock: called on any tap of the mobile overlay.
+      // Must be synchronous and directly inside the event handler
+      // so iOS treats it as a trusted gesture.
+      function doAudioUnlock() {
+          audioContextUnlocked = true;
+
+          // 1. p5.js helper — unlocks p5's own AudioContext
+          if (typeof userStartAudio === 'function') {
+              try { userStartAudio(); } catch(e) {}
+          }
+
+          // 2. Resume p5's AudioContext directly
+          if (typeof getAudioContext === 'function') {
+              try { getAudioContext().resume(); } catch(e) {}
+          }
+
+          // 3. Belt-and-suspenders: play a 1-sample silent buffer.
+          //    This is the canonical iOS Web Audio unlock trick — it
+          //    marks the context as "started by user gesture" even if
+          //    p5 isn't fully initialised yet.
+          try {
+              var AC = window.AudioContext || window.webkitAudioContext;
+              if (AC) {
+                  var ctx = new AC();
+                  var buf = ctx.createBuffer(1, 1, 22050);
+                  var src = ctx.createBufferSource();
+                  src.buffer = buf;
+                  src.connect(ctx.destination);
+                  src.start(0);
+                  ctx.resume();
+              }
+          } catch(e) {}
+
+          // Fade out and hide the overlay
+          var mo = document.getElementById('mobile-audio-overlay');
+          mo.classList.add('hiding');
+          mo.addEventListener('animationend', function() {
+              mo.style.display = 'none';
+          }, { once: true });
+      }
+
+      var mobileOverlay = document.getElementById('mobile-audio-overlay');
+      mobileOverlay.addEventListener('click',      doAudioUnlock);
+      mobileOverlay.addEventListener('touchstart', doAudioUnlock, { passive: true });
     </script>
 
     <script src="sketch.js"></script>

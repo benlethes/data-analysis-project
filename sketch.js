@@ -86,6 +86,13 @@ function setup() {
     setupControls();
     background(bgVal());
     setInterval(checkAudioState, 1000);
+
+    // If the mobile audio overlay was already tapped before p5 finished
+    // setting up (audioContextUnlocked flag set in HTML script), resume here.
+    if (window.audioContextUnlocked) {
+        try { userStartAudio(); } catch(e) {}
+        try { getAudioContext().resume(); } catch(e) {}
+    }
 }
 
 function checkAudioState() {
@@ -534,11 +541,13 @@ function setupControls() {
     });
 
     select('#playBtn').mousePressed(() => {
+        // Always attempt to unlock the audio context first — this is the
+        // direct user-gesture call that iOS/Android require. It must be
+        // synchronous and at the top of the handler.
         userStartAudio();
         getAudioContext().resume();
 
         if (vizPaused) {
-            // Just unfreeze — don't restart audio
             vizPaused = false;
             loop();
             select('#pauseBtn').html('Pause');
@@ -548,24 +557,20 @@ function setupControls() {
         }
 
         if (inputMode === 'mic') {
+            select('#playback-info').html('Starting mic...');
             mic.start(() => {
-                // Called when mic stream is confirmed active.
-                // CRITICAL: set FFT input here, not in the dropdown handler.
+                // CRITICAL: route FFT to mic only after stream is live.
+                // Calling fft.setInput(mic) before this causes silent data
+                // on Safari/iOS (stream isn't ready yet).
                 fft.setInput(mic);
+                amplitude.setInput(mic);
                 micActive = true;
                 select('#playBtn').addClass('active');
                 select('#playback-info').html('Listening to mic...');
             });
-            // Fallback for browsers that don't call the callback:
-            // set fft input after a short delay regardless
-            setTimeout(() => {
-                if (!micActive) {
-                    fft.setInput(mic);
-                    micActive = true;
-                    select('#playBtn').addClass('active');
-                    select('#playback-info').html('Listening to mic...');
-                }
-            }, 300);
+            // No setTimeout fallback — it runs outside the gesture window
+            // and iOS will block it anyway. The callback above is reliable
+            // on Chrome, Firefox, and Safari when called from a tap.
             return;
         }
 
